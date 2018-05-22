@@ -33,43 +33,43 @@ func (l *Lexer) NextToken() Token {
 		if l.peekChar() == '=' {
 			ch := l.ch
 			l.readChar()
-			tok = newToken(ASSIGN, ch, l.ch)
+			tok = newToken(itemAssign, ch, l.ch)
 		} else {
 			tok = newToken(COLON, l.ch)
 		}
 	case '=':
-		tok = newToken(EQ, l.ch)
+		tok = newToken(itemEq, l.ch)
 	case '+':
-		tok = newToken(PLUS, l.ch)
+		tok = newToken(itemPlus, l.ch)
 	case '-':
-		tok = newToken(MINUS, l.ch)
+		tok = newToken(itemMinus, l.ch)
 	case '!':
 		if l.peekChar() == '=' {
 			ch := l.ch
 			l.readChar()
-			tok = newToken(BANG, ch, l.ch)
+			tok = newToken(itemNotEq, ch, l.ch)
 		} else {
-			tok = newToken(BANG, l.ch)
+			tok = newToken(itemBang, l.ch)
 		}
 	case '/':
-		tok = newToken(SLASH, l.ch)
+		tok = newToken(itemSlash, l.ch)
 	case '*':
-		tok = newToken(ASTERISK, l.ch)
+		tok = newToken(itemAsterisk, l.ch)
 	case '<':
 		if l.peekChar() == '=' {
 			ch := l.ch
 			l.readChar()
-			tok = newToken(LT_EQ, ch, l.ch)
+			tok = newToken(itemLtOrEq, ch, l.ch)
 		} else {
-			tok = newToken(LT, l.ch)
+			tok = newToken(itemLt, l.ch)
 		}
 	case '>':
 		if l.peekChar() == '=' {
 			ch := l.ch
 			l.readChar()
-			tok = newToken(GT_EQ, ch, l.ch)
+			tok = newToken(itemGtOrEq, ch, l.ch)
 		} else {
-			tok = newToken(GT, l.ch)
+			tok = newToken(itemGt, l.ch)
 		}
 	case ';':
 		tok = newToken(SEMICOLON, l.ch)
@@ -88,7 +88,7 @@ func (l *Lexer) NextToken() Token {
 	case ']':
 		tok = newToken(RBRAKET, l.ch)
 	case '"':
-		tok.Type = STRING
+		tok.Type = itemString
 		tok.Literal = l.readString()
 	case 0:
 		tok.Literal = ""
@@ -99,11 +99,11 @@ func (l *Lexer) NextToken() Token {
 			tok.Type = LookupIdent(tok.Literal)
 			return tok
 		} else if isDigit(l.ch) {
-			tok.Type = NUMBER
+			tok.Type = itemNumber
 			tok.Literal = l.readNumber()
 			return tok
 		} else {
-			tok = newToken(ILLEGAL, l.ch)
+			tok = newToken(itemIllegal, l.ch)
 		}
 	}
 

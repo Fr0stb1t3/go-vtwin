@@ -1,56 +1,62 @@
 package lex
 
+// TokenType of tokens for iota
+type TokenType int
+
 const (
-	ILLEGAL = "ILLEGAL"
-	EOF     = "EOF"
+	// EOF char
+	EOF TokenType = iota
+	itemIllegal
 
 	// Identifiers + literals
-	IDENTIFIER = "IDENTIFIER" // add, foobar, x, y, ...
-	NUMBER     = "NUMBER"     // 1343456
-	STRING     = "STRING"
+	itemIdentifier // = "IDENTIFIER" // add, foobar, x, y, ...
+	itemNumber     // = "NUMBER"     // 1343456
+	itemString     // = "STRING"
 
 	// Operators
-	ASSIGN   = ":="
-	PLUS     = "+"
-	MINUS    = "-"
-	BANG     = "!"
-	ASTERISK = "*"
-	SLASH    = "/"
 
-	LT    = "<"
-	LT_EQ = "<="
-	GT    = ">"
-	GT_EQ = ">="
+	itemAssign   // = ":="
+	itemPlus     //  = "+"
+	itemMinus    // = "-"
+	itemBang     // = "!"
+	itemAsterisk // = "*"
+	itemSlash    // = "/"
 
-	EQ     = "="
-	NOT_EQ = "!="
+	itemLt     // = "<"
+	itemLtOrEq // = "<="
+	itemGt     // = ">"
+	itemGtOrEq // = ">="
+
+	itemEq    // = "="
+	itemNotEq // = "!="
 
 	// Delimiters
-	COMMA     = ","
-	COLON     = ":"
-	SEMICOLON = ";"
-	LPAREN    = "("
-	RPAREN    = ")"
-	LBRACE    = "{"
-	RBRACE    = "}"
-	LBRAKET   = "["
-	RBRAKET   = "]"
+
+	COMMA     // = ","
+	COLON     // = ":"
+	SEMICOLON // = ";"
+	LPAREN    // = "("
+	RPAREN    // = ")"
+	LBRACE    // = "{"
+	RBRACE    // = "}"
+	LBRAKET   // = "["
+	RBRAKET   // = "]"
 
 	// Keywords
-	FUNCTION = "FUNCTION"
-	LET      = "LET"
-	CONST    = "CONST"
-	TRUE     = "TRUE"
-	FALSE    = "FALSE"
-	NIL      = "NIL"
-	OR       = "OR"
-	IF       = "IF"
-	ELSE     = "ELSE"
-	RETURN   = "RETURN"
-	PRINT    = "PRINT"
-)
 
-type TokenType string
+	FUNCTION // = "FUNCTION"
+	LET      // = "LET"
+	CONST    // = "CONST"
+	TRUE     // = "TRUE"
+	FALSE    // = "FALSE"
+	NIL      // = "NIL"
+
+	//	OR       // = "OR"
+	IF     // = "IF"
+	ELSE   // = "ELSE"
+	RETURN // = "RETURN"
+	PRINT  // = "PRINT"
+)
 
 type Token struct {
 	Type    TokenType
@@ -68,7 +74,7 @@ var keywords = map[string]TokenType{
 	"else":   ELSE,
 	"return": RETURN,
 	"print":  PRINT,
-	"or":     OR,
+	//	"or":     OR,
 }
 
 func LookupIdent(ident string) TokenType {
@@ -76,5 +82,5 @@ func LookupIdent(ident string) TokenType {
 		return tok
 	}
 
-	return IDENTIFIER
+	return itemIdentifier
 }
