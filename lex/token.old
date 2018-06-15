@@ -84,8 +84,8 @@ const (
 )
 
 var tokens = [...]string{
-	// Special tokens
 	ILLEGAL: "ILLEGAL",
+
 	EOF:     "EOF",
 	COMMENT: "COMMENT",
 
@@ -95,19 +95,15 @@ var tokens = [...]string{
 	CHAR:   "CHAR",
 	STRING: "STRING",
 
-	// Operators
-	AND:  "&",
-	OR:   "|",
-	XOR:  "^",
-	REM:  "%",
 	ADD:  "+",
 	SUBT: "-",
-	NOT:  "!",
 	MULT: "*",
 	DIV:  "/",
+	REM:  "%",
 
-	LAND:    "&&",
-	LOR:     "||",
+	AND:     "&",
+	OR:      "|",
+	XOR:     "^",
 	SHL:     "<<",
 	SHR:     ">>",
 	AND_NOT: "&^",
@@ -117,35 +113,37 @@ var tokens = [...]string{
 	SUB_ASSIGN: "-=",
 	MUL_ASSIGN: "*=",
 	DIV_ASSIGN: "/=",
-	LSS:        "<",
-	GTR:        ">",
 
-	EQL: "=",
-	LEQ: "<=",
-	GEQ: ">=",
-	NEQ: "!=",
+	LSS: "<",
+	GTR: ">",
+	NOT: "!",
 
-	COMMA:     ",",
-	COLON:     ":",
-	SEMICOLON: ";",
+	LAND: "&&",
+	LOR:  "||",
+	EQL:  "==",
+	NEQ:  "!=",
+	LEQ:  "<=",
+	GEQ:  ">=",
+
 	LPAREN:    "(",
-	RPAREN:    ")",
-	LBRACE:    "{",
-	RBRACE:    "}",
 	LBRACK:    "[",
+	LBRACE:    "{",
+	COMMA:     ",",
+	RPAREN:    ")",
 	RBRACK:    "]",
+	RBRACE:    "}",
+	SEMICOLON: ";",
+	COLON:     ":",
 
-	FUNCTION: "FUNCTION",
-	LET:      "LET",
-	CONST:    "CONST",
-	TRUE:     "TRUE",
-	FALSE:    "FALSE",
-	NIL:      "NIL",
-	RETURN:   "RETURN",
-	IMPORT:   "IMPORT",
-	FROM:     "FROM",
-	IF:       "IF",
-	ELSE:     "ELSE",
+	CONST: "const",
+
+	ELSE: "else",
+
+	FUNCTION: "func",
+	IF:       "if",
+	IMPORT:   "import",
+
+	RETURN: "return",
 }
 
 func (tok Token) String() string {

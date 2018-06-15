@@ -10,27 +10,11 @@ type Lexer struct {
 	s            ast.Stmt
 }
 
-//  represents a token or text string returned from the scanner.
-type item struct {
-	typ  Token  // The type of this .
-	pos  int    // The starting position, in bytes, of this  in the input string.
-	val  string // The value of this .
-	line int    // The line number at the start of this .
+type Lexeme struct {
+	Type    Token
+	Literal string
+	Name    string
 }
-
-// func (i) String() string {
-// 	switch {
-// 	case i.typ == EOF:
-// 		return "EOF"
-// 	case i.typ == Error:
-// 		return i.val
-// 	case i.typ > Keyword:
-// 		return fmt.Sprintf("<%s>", i.val)
-// 	case len(i.val) > 10:
-// 		return fmt.Sprintf("%.10q...", i.val)
-// 	}
-// 	return fmt.Sprintf("%q", i.val)
-// }
 
 func New(input string) *Lexer {
 	l := &Lexer{input: input}
@@ -48,8 +32,9 @@ func (l *Lexer) readChar() {
 	l.position = l.readPosition
 	l.readPosition += 1
 }
-func (l *Lexer) NextToken() TokenStruct {
-	var tok TokenStruct
+
+func (l *Lexer) NextToken() Lexeme {
+	var tok Lexeme
 
 	l.skipWhitespace()
 
@@ -121,7 +106,7 @@ func (l *Lexer) NextToken() TokenStruct {
 	default:
 		if isLetter(l.ch) {
 			tok.Literal = l.readIdentifier()
-			tok.Type = LookupIdent(tok.Literal)
+			tok.Type = Lookup(tok.Literal)
 			return tok
 		} else if isDigit(l.ch) {
 			tok.Type = INT
@@ -179,14 +164,15 @@ func (l *Lexer) readString() string {
 	return l.input[position:l.position]
 }
 
-func newToken(tokenType Token, chars ...byte) TokenStruct {
+func newToken(token Token, chars ...byte) Lexeme {
 	literal := ""
 	for _, ch := range chars {
 		literal += string(ch)
 	}
-	return TokenStruct{
-		Type:    tokenType,
+	return Lexeme{
+		Type:    token,
 		Literal: literal,
+		Name:    token.String(),
 	}
 }
 
