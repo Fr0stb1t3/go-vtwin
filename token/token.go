@@ -1,7 +1,6 @@
-package lex
+package token
 
 import (
-	"fmt"
 	"strconv"
 )
 
@@ -135,22 +134,22 @@ var tokens = [...]string{
 	LBRACK:    "[",
 	RBRACK:    "]",
 
-	FUNCTION: "FUNCTION",
-	LET:      "LET",
-	CONST:    "CONST",
-	TRUE:     "TRUE",
-	FALSE:    "FALSE",
+	FUNCTION: "func",
+	LET:      "let",
+	CONST:    "const",
+	TRUE:     "true",
+	FALSE:    "false",
 	NIL:      "NIL",
-	RETURN:   "RETURN",
-	IMPORT:   "IMPORT",
-	FROM:     "FROM",
-	IF:       "IF",
-	ELSE:     "ELSE",
+	RETURN:   "return",
+	IMPORT:   "import",
+	FROM:     "from",
+	IF:       "if",
+	ELSE:     "else",
 }
 
 func (tok Token) String() string {
 	s := ""
-	fmt.Printf("tok %#v \n", tok)
+	// fmt.Printf("tok %#v \n", tok)
 	if 0 <= tok && tok < Token(len(tokens)) {
 		s = tokens[tok]
 	}
@@ -202,9 +201,11 @@ func Lookup(ident string) Token {
 func (tok Token) IsLiteral() bool {
 	return literal_beg < tok && tok < literal_end
 }
+
 func (tok Token) IsOpertor() bool {
 	return operator_beg < tok && tok < operator_end
 }
+
 func (tok Token) isKeyword() bool {
 	return keyword_beg < tok && tok < keyword_end
 }
