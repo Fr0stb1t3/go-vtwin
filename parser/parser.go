@@ -12,8 +12,8 @@ type Parser struct {
 	l      *lexer.Lexer
 	errors []string
 
-	curToken  token.Token
-	peekToken token.Token
+	curToken  lexer.Lexeme
+	peekToken lexer.Lexeme
 
 	prefixParseFns map[token.Token]prefixParseFn
 	infixParseFns  map[token.Token]infixParseFn
@@ -37,19 +37,45 @@ func New(l *lexer.Lexer) *Parser {
 
 func (p *Parser) nextToken() {
 	p.curToken = p.peekToken
-	p.peekToken = p.l.NextToken().Type
+	p.peekToken = p.l.NextToken()
 }
 
-func (p *Parser) parseExpression(precedence int) {
+func (p *Parser) parseConstStatement(t token.Token) {
+
+}
+func (p *Parser) parseExpression(t token.Token) {
 
 }
 
-func (p *Parser) processToken(t token.Token) {
+func (p *Parser) parseStatement() ast.Statement {
+	switch p.curToken.Type {
+	case token.CONST:
+		fmt.Printf("parse as immutable assignment %v\n", p.curToken.Literal)
+	case token.LET:
+		fmt.Printf("parse as mutable assignment %v\n", p.curToken.Literal)
+	case token.RETURN:
+		fmt.Printf("parse as return statement %v\n", p.curToken.Literal)
+	case token.INT:
+		fmt.Printf("parse as integer %v %v\n", p.curToken.Type, p.curToken.Literal)
+	default:
+		fmt.Printf("parse as expression statement %v \n", p.curToken.Literal)
+	}
+	return nil
+}
+
+func (p *Parser) parseString(t token.Token) {
+
+}
+func (p *Parser) parseNumber(t token.Token) {
+
+}
+func (p *Parser) parseToken(t token.Token) {
 	fmt.Printf("parsing %v\n", t)
 	if t == token.INT {
 		fmt.Printf("push it to the output queue %v\n", t)
-
+		return
 	}
+
 	// while there are tokens to be read:
 	//     read a token.
 	//     if the token is a number, then:
@@ -81,13 +107,17 @@ func (p *Parser) ParseProgram() *ast.Program {
 	program := &ast.Program{}
 	program.Statements = []ast.Statement{}
 
-	for p.curToken != token.EOF {
-		p.processToken(p.curToken)
+	for p.curToken.Type != token.EOF {
+		// stmt := p.parseToken(t)(p.curToken.Type)
+		stmt := p.parseStatement()
+		if stmt != nil {
+			program.Statements = append(program.Statements, stmt)
+		}
 		p.nextToken()
 	}
 	fmt.Printf("parsing %v\n", program)
 	return program
 }
 func (p *Parser) peekTokenIs(t token.Token) bool {
-	return p.peekToken == t
+	return p.peekToken.Type == t
 }
