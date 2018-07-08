@@ -139,7 +139,7 @@ var tokens = [...]string{
 	CONST:    "const",
 	TRUE:     "true",
 	FALSE:    "false",
-	NIL:      "NIL",
+	NIL:      "nil",
 	RETURN:   "return",
 	IMPORT:   "import",
 	FROM:     "from",
