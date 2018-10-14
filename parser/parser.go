@@ -43,11 +43,11 @@ func (nd *Node) String() string {
 	var out string
 
 	if nd.Left != nil {
-		out = "<" + out + nd.Left.String()
+		out = " <" + out + nd.Left.String()
 	}
 	out = out + nd.Value.Literal
 	if nd.Right != nil {
-		out = out + nd.Right.String() + ">"
+		out = out + nd.Right.String() + "> "
 	}
 	return out
 }
@@ -62,17 +62,10 @@ func (p *Parser) parseExpression(endToken token.Type) Node {
 	expression := Node{}
 
 	for !p.tokenIs(endToken) {
-		if p.tokenIs(token.EOF) {
-			// TODO FIX FALLBACK
-			// log.Info("OPS")
-			//panic("End of file reached")
-			break
-			// panic("End of file reached")
-		}
-		if expression.Left != nil && expression.Value != empty && expression.Right != nil {
-			oldExpression := *(&expression)
-			expression = Node{Left: &oldExpression}
-		}
+
+		/*
+			if there is a open brace run call parse expression (recursion)
+		*/
 		if p.tokenIs(token.LPAREN) {
 			subNode := p.parseExpression(token.RPAREN)
 			if expression.Left == nil {
@@ -82,12 +75,28 @@ func (p *Parser) parseExpression(endToken token.Type) Node {
 			}
 			p.nextToken()
 		}
+
+		/*
+			If there are more tokens
+			Moves the old expression to the left node
+		*/
+		if !p.tokenIs(endToken) &&
+			expression.Left != nil &&
+			expression.Value != empty &&
+			expression.Right != nil {
+			oldExpression := *(&expression)
+			expression = Node{Left: &oldExpression}
+		}
+		/*
+			If the left node has an operator next operator precedence
+		*/
 		if expression.Left != nil &&
 			expression.Value.Type.IsOpertor() &&
 			p.peekPrecedence() > expression.Value.Type.Precedence() {
 			subNode := p.parseExpression(endToken)
 			expression.Right = &subNode
-		} else if p.curToken.Type.IsOpertor() {
+		}
+		if p.curToken.Type.IsOpertor() {
 			expression.Value = p.curToken
 		} else {
 			if expression.Left == nil {
@@ -96,9 +105,10 @@ func (p *Parser) parseExpression(endToken token.Type) Node {
 				expression.Right = &Node{Value: p.curToken}
 			}
 		}
-		p.nextToken()
+		if !p.peekTokenIs(token.EOF) {
+			p.nextToken()
+		}
 	}
-	// log.Info("Paren closed", endToken)
 	return expression
 }
 
