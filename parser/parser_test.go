@@ -13,6 +13,7 @@ func assertEqual(t *testing.T, a interface{}, b interface{}) {
 		t.Fatalf("%s != %s", a, b)
 	}
 }
+
 func TestSimpleTree(t *testing.T) {
 	input := "1+2+4-5;" //2*7+3;3+2*7;
 
@@ -58,7 +59,9 @@ func TestPrecedence(t *testing.T) {
 	assertEqual(t, tree.Left.Left.Value, tokLeftLeft)
 	assertEqual(t, tree.Right.Left.Value, tokRightLeft)
 	assertEqual(t, tree.Right.Right.Value, tokRightRight)
+	//fmt.Printf("Tree stringified %v\n", program.Statements)
 }
+
 func TestPrecedenceTwo(t *testing.T) {
 	input := "1+2*4+5;"
 
@@ -67,25 +70,26 @@ func TestPrecedenceTwo(t *testing.T) {
 	program := p.ParseProgram()
 	tree := program.Statements[0]
 	rootToken := token.NewToken(token.ADD, '+')
-	tokLeft := token.NewToken(token.ADD, '+')
-	tokRight := token.NewToken(token.INT, '5')
+	tokLeft := token.NewToken(token.INT, '1')
+	tokRight := token.NewToken(token.ADD, '+')
 
-	tokLeftRight := token.NewToken(token.MULT, '*')
-	tokLeftLeft := token.NewToken(token.INT, '1')
-	tokLeftRightLeft := token.NewToken(token.INT, '2')
-	tokLeftRightRight := token.NewToken(token.INT, '4')
-
+	tokRightLeft := token.NewToken(token.MULT, '*')
+	tokRightRight := token.NewToken(token.INT, '5')
+	tokRightLeftLeft := token.NewToken(token.INT, '2')
+	tokRightLeftRight := token.NewToken(token.INT, '4')
+	// fmt.Printf("Tree stringified %v\n", program.Statements)
 	assertEqual(t, tree.Value, rootToken)
 	assertEqual(t, tree.Left.Value, tokLeft)
 	assertEqual(t, tree.Right.Value, tokRight)
-	assertEqual(t, tree.Left.Right.Value, tokLeftRight)
-	assertEqual(t, tree.Left.Left.Value, tokLeftLeft)
-	assertEqual(t, tree.Left.Right.Left.Value, tokLeftRightLeft)
-	assertEqual(t, tree.Left.Right.Right.Value, tokLeftRightRight)
-	fmt.Printf("Tree stringified %v\n", program.Statements)
+	assertEqual(t, tree.Right.Left.Value, tokRightLeft)
+	assertEqual(t, tree.Right.Right.Value, tokRightRight)
+	assertEqual(t, tree.Right.Left.Left.Value, tokRightLeftLeft)
+	assertEqual(t, tree.Right.Left.Right.Value, tokRightLeftRight)
+
 }
+
 func TestPrecedenceBraces(t *testing.T) {
-	input := "(1+2)*(4+5);"
+	input := "(2+1)*(4+5);"
 
 	l := lexer.New(input)
 	p := New(l)
@@ -100,6 +104,7 @@ func TestPrecedenceBraces(t *testing.T) {
 	tokRightLeft := token.NewToken(token.INT, '4')
 	tokRightRight := token.NewToken(token.INT, '5')
 
+	fmt.Printf("Tree stringified %v\n", program.Statements)
 	assertEqual(t, tree.Value, rootToken)
 	assertEqual(t, tree.Left.Value, tokLeft)
 	assertEqual(t, tree.Right.Value, tokRight)
@@ -107,5 +112,4 @@ func TestPrecedenceBraces(t *testing.T) {
 	assertEqual(t, tree.Left.Left.Value, tokLeftLeft)
 	assertEqual(t, tree.Right.Left.Value, tokRightLeft)
 	assertEqual(t, tree.Right.Right.Value, tokRightRight)
-	fmt.Printf("Tree stringified %v\n", program.Statements)
-}
+} /**/

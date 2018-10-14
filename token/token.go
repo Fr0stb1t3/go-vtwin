@@ -53,6 +53,7 @@ const (
 	GEQ // ">="
 	NEQ // "!="
 
+	operator_end
 	// Delimiters
 
 	COMMA     // ","
@@ -64,8 +65,6 @@ const (
 	RBRACE    // "}"
 	LBRACK    // "["
 	RBRACK    // "]"
-
-	operator_end
 
 	keyword_beg
 	FUNCTION // "FUNCTION"
