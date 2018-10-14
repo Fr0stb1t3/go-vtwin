@@ -3,7 +3,6 @@ package parser
 import (
 	"fmt"
 
-	"github.com/Fr0stb1t3/go-vtwin/ast"
 	"github.com/Fr0stb1t3/go-vtwin/lexer"
 	"github.com/Fr0stb1t3/go-vtwin/token"
 	log "github.com/sirupsen/logrus"
@@ -13,8 +12,8 @@ type Parser struct {
 	l      *lexer.Lexer
 	errors []string
 
-	curToken  lexer.Lexeme
-	peekToken lexer.Lexeme
+	curToken  token.Token
+	peekToken token.Token
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -34,16 +33,9 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 
-func (p *Parser) parseConstStatement(t token.Token) {
-
-}
-func (p *Parser) parseLiteral() ast.IntegerLiteral {
-	return ast.IntegerLiteral{p.curToken.Type, p.curToken.Literal}
-}
-
 type node struct {
 	Left  *node
-	Value lexer.Lexeme
+	Value token.Token
 	Right *node
 }
 
@@ -61,7 +53,7 @@ func (nd *node) String() string {
 }
 
 func (p *Parser) parseExpression() node {
-	empty := lexer.Lexeme{}
+	empty := token.Token{}
 	expression := node{}
 
 	// 1+2*4+5;
@@ -106,7 +98,7 @@ func (p *Parser) parseExpression() node {
 	return expression
 }
 
-func (p *Parser) parseStatement() ast.Statement {
+func (p *Parser) parseStatement() *Statement {
 	switch p.curToken.Type {
 	case token.CONST:
 		fmt.Printf("parse as immutable assignment %v\n", p.curToken.Literal)
@@ -124,7 +116,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	return nil
 }
 
-func (p *Parser) parseToken(t token.Token) {
+func (p *Parser) parseToken(t token.Type) {
 	fmt.Printf("parsing %v\n", t)
 	if t == token.INT {
 		fmt.Printf("push it to the output queue %v\n", t)
@@ -158,27 +150,32 @@ func (p *Parser) parseToken(t token.Token) {
 	// exit.
 }
 
-func (p *Parser) ParseProgram() *ast.Program {
-	program := &ast.Program{}
-	program.Statements = []ast.Statement{}
+type Statement struct{}
+type Program struct {
+	Statements []Statement
+}
+
+func (p *Parser) ParseProgram() *Program {
+	program := &Program{}
+	program.Statements = []Statement{}
 
 	for p.curToken.Type != token.EOF {
 		// stmt := p.parseToken(t)(p.curToken.Type)
 		stmt := p.parseStatement()
 		if stmt != nil {
-			program.Statements = append(program.Statements, stmt)
+			program.Statements = append(program.Statements, *stmt)
 		}
 		p.nextToken()
 	}
-	fmt.Printf("parsing %v\n", program)
+	// fmt.Printf("parsing %v\n", program)
 	return program
 }
 func (p *Parser) peekPrecedence() int {
 	return p.peekToken.Type.Precedence()
 }
-func (p *Parser) tokenIs(t token.Token) bool {
+func (p *Parser) tokenIs(t token.Type) bool {
 	return p.curToken.Type == t
 }
-func (p *Parser) peekTokenIs(t token.Token) bool {
+func (p *Parser) peekTokenIs(t token.Type) bool {
 	return p.peekToken.Type == t
 }
