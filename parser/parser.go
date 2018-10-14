@@ -6,6 +6,7 @@ import (
 	"github.com/Fr0stb1t3/go-vtwin/ast"
 	"github.com/Fr0stb1t3/go-vtwin/lexer"
 	"github.com/Fr0stb1t3/go-vtwin/token"
+	log "github.com/sirupsen/logrus"
 )
 
 type Parser struct {
@@ -14,14 +15,7 @@ type Parser struct {
 
 	curToken  lexer.Lexeme
 	peekToken lexer.Lexeme
-
-	prefixParseFns map[token.Token]prefixParseFn
-	infixParseFns  map[token.Token]infixParseFn
 }
-type (
-	prefixParseFn func() ast.Expression
-	infixParseFn  func(ast.Expression) ast.Expression
-)
 
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{
@@ -43,8 +37,73 @@ func (p *Parser) nextToken() {
 func (p *Parser) parseConstStatement(t token.Token) {
 
 }
-func (p *Parser) parseExpression(t token.Token) {
+func (p *Parser) parseLiteral() ast.IntegerLiteral {
+	return ast.IntegerLiteral{p.curToken.Type, p.curToken.Literal}
+}
 
+type node struct {
+	Left  *node
+	Value lexer.Lexeme
+	Right *node
+}
+
+func (nd *node) String() string {
+	var out string
+
+	if nd.Left != nil {
+		out = out + nd.Left.String()
+	}
+	out = out + nd.Value.Literal
+	if nd.Right != nil {
+		out = out + nd.Right.String()
+	}
+	return out
+}
+
+func (p *Parser) parseExpression() node {
+	empty := lexer.Lexeme{}
+	expression := node{}
+
+	// 1+2*4+5;
+	// 		 +
+	// 	+		5
+	// 1	*
+	//  2  4
+	for !p.tokenIs(token.SEMICOLON) { //  && precedence < p.peekPrecedence()
+		if expression.Left != nil && expression.Value != empty && expression.Right != nil {
+			oldExpression := *(&expression)
+			expression = node{Left: &oldExpression}
+		}
+		if p.curToken.Type.IsOpertor() {
+			if expression.Left.Value.Type.IsOpertor() &&
+				expression.Left.Value.Type.Precedence() < p.curToken.Type.Precedence() {
+				oldValue := *(&expression.Left.Right)
+				newRight := node{
+					Left:  oldValue,
+					Value: p.curToken,
+				}
+				p.nextToken()
+				newRight.Right = &node{Value: p.curToken}
+				expression.Left.Right = &newRight
+				expression = *expression.Left
+			} else if expression.Value == empty {
+				expression.Value = p.curToken
+			}
+		} else {
+			if expression.Left == nil {
+				expression.Left = &node{Value: p.curToken}
+			} else if expression.Right == nil {
+				expression.Right = &node{Value: p.curToken}
+			}
+		}
+		// log.Info("CUR EXPRESSION", expression)
+		// log.Info("oldExpression", oldExpression)
+		// log.Info("-----")
+		p.nextToken()
+	}
+	log.Info("expression", expression)
+
+	return expression
 }
 
 func (p *Parser) parseStatement() ast.Statement {
@@ -56,19 +115,15 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		fmt.Printf("parse as return statement %v\n", p.curToken.Literal)
 	case token.INT:
-		fmt.Printf("parse as integer %v %v\n", p.curToken.Type, p.curToken.Literal)
+		if p.peekToken.Type.IsOpertor() {
+			p.parseExpression()
+		}
 	default:
 		fmt.Printf("parse as expression statement %v \n", p.curToken.Literal)
 	}
 	return nil
 }
 
-func (p *Parser) parseString(t token.Token) {
-
-}
-func (p *Parser) parseNumber(t token.Token) {
-
-}
 func (p *Parser) parseToken(t token.Token) {
 	fmt.Printf("parsing %v\n", t)
 	if t == token.INT {
@@ -117,6 +172,12 @@ func (p *Parser) ParseProgram() *ast.Program {
 	}
 	fmt.Printf("parsing %v\n", program)
 	return program
+}
+func (p *Parser) peekPrecedence() int {
+	return p.peekToken.Type.Precedence()
+}
+func (p *Parser) tokenIs(t token.Token) bool {
+	return p.curToken.Type == t
 }
 func (p *Parser) peekTokenIs(t token.Token) bool {
 	return p.peekToken.Type == t

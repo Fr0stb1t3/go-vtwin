@@ -16,7 +16,7 @@ type FloatLiteral struct {
 
 type IntegerLiteral struct {
 	Token token.Token
-	Value int64
+	Value string
 }
 
 type StringLiteral struct {

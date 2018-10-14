@@ -6,6 +6,11 @@ import (
 	"github.com/Fr0stb1t3/go-vtwin/token"
 )
 
+type Node interface {
+	Token() token.Token
+	String() string
+}
+
 type Expression interface {
 	Node
 	expressionNode()
@@ -13,9 +18,9 @@ type Expression interface {
 
 type InfixExpression struct {
 	Token    token.Token // The operator token, e.g. +
-	Left     Expression
+	Left     Node
 	Operator string
-	Right    Expression
+	Right    Node
 }
 
 type ExpressionStatement struct {

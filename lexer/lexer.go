@@ -14,7 +14,6 @@ type Lexer struct {
 type Lexeme struct {
 	Type    token.Token
 	Literal string
-	Name    string
 }
 
 func New(input string) *Lexer {
@@ -173,7 +172,6 @@ func newToken(token token.Token, chars ...byte) Lexeme {
 	return Lexeme{
 		Type:    token,
 		Literal: literal,
-		Name:    token.String(),
 	}
 }
 
