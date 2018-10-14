@@ -29,7 +29,7 @@ func TestNextToken(t *testing.T) {
 				const arr := [1, 2, 3];
 			`
 	tests := []struct {
-		expectedType    token.Token
+		expectedType    token.Type
 		expectedLiteral string
 	}{
 		{token.LET, "let"},

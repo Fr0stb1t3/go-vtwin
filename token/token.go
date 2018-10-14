@@ -4,13 +4,13 @@ import (
 	"strconv"
 )
 
-// Token of tokens for iota
-type Token int
+// Type of tokens for iota
+type Type int
 
 // The list of tokens.
 const (
 	// Special tokens
-	ILLEGAL Token = iota
+	ILLEGAL Type = iota
 	EOF
 	COMMENT
 
@@ -147,10 +147,10 @@ var tokens = [...]string{
 	ELSE:     "else",
 }
 
-func (tok Token) String() string {
+func (tok Type) String() string {
 	s := ""
 	// fmt.Printf("tok %#v \n", tok)
-	if 0 <= tok && tok < Token(len(tokens)) {
+	if 0 <= tok && tok < Type(len(tokens)) {
 		s = tokens[tok]
 	}
 	if s == "" {
@@ -166,7 +166,7 @@ const (
 )
 
 // Precedence returns the precedence level for all operations
-func (op Token) Precedence() int {
+func (op Type) Precedence() int {
 	switch op {
 	case LOR:
 		return 1
@@ -182,30 +182,46 @@ func (op Token) Precedence() int {
 	return LowestPrec
 }
 
-var keywords map[string]Token
+var keywords map[string]Type
 
 func init() {
-	keywords = make(map[string]Token)
+	keywords = make(map[string]Type)
 	for i := keyword_beg + 1; i < keyword_end; i++ {
 		keywords[tokens[i]] = i
 	}
 }
 
-func Lookup(ident string) Token {
+func Lookup(ident string) Type {
 	if tok, is_keyword := keywords[ident]; is_keyword {
 		return tok
 	}
 	return IDENT
 }
 
-func (tok Token) IsLiteral() bool {
+func (tok Type) IsLiteral() bool {
 	return literal_beg < tok && tok < literal_end
 }
 
-func (tok Token) IsOpertor() bool {
+func (tok Type) IsOpertor() bool {
 	return operator_beg < tok && tok < operator_end
 }
 
-func (tok Token) isKeyword() bool {
+func (tok Type) isKeyword() bool {
 	return keyword_beg < tok && tok < keyword_end
+}
+
+type Token struct {
+	Type    Type
+	Literal string
+}
+
+func NewToken(t Type, chars ...byte) Token {
+	literal := ""
+	for _, ch := range chars {
+		literal += string(ch)
+	}
+	return Token{
+		Type:    t,
+		Literal: literal,
+	}
 }

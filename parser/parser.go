@@ -69,7 +69,7 @@ func (p *Parser) parseExpression() node {
 	// 	+		5
 	// 1	*
 	//  2  4
-	for !p.tokenIs(token.SEMICOLON) { //  && precedence < p.peekPrecedence()
+	for !p.tokenIs(token.SEMICOLON) {
 		if expression.Left != nil && expression.Value != empty && expression.Right != nil {
 			oldExpression := *(&expression)
 			expression = node{Left: &oldExpression}
