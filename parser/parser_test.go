@@ -19,6 +19,7 @@ func TestSimpleTree(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
+	tree := program.Statements[0]
 	rootToken := token.NewToken(token.SUBT, '-')
 	tokLeft := token.NewToken(token.ADD, '+')
 	tokRight := token.NewToken(token.INT, '5')
@@ -26,14 +27,14 @@ func TestSimpleTree(t *testing.T) {
 	tokLeftLeft := token.NewToken(token.ADD, '+')
 	tokLeftLeftLeft := token.NewToken(token.INT, '1')
 	tokLeftLeftRight := token.NewToken(token.INT, '2')
-	assertEqual(t, program.Statements[0].Value, rootToken)
-	assertEqual(t, program.Statements[0].Left.Value, tokLeft)
-	assertEqual(t, program.Statements[0].Left.Value, tokLeft)
-	assertEqual(t, program.Statements[0].Right.Value, tokRight)
-	assertEqual(t, program.Statements[0].Left.Right.Value, tokLeftRight)
-	assertEqual(t, program.Statements[0].Left.Left.Value, tokLeftLeft)
-	assertEqual(t, program.Statements[0].Left.Left.Left.Value, tokLeftLeftLeft)
-	assertEqual(t, program.Statements[0].Left.Left.Right.Value, tokLeftLeftRight)
+	assertEqual(t, tree.Value, rootToken)
+	assertEqual(t, tree.Left.Value, tokLeft)
+	assertEqual(t, tree.Left.Value, tokLeft)
+	assertEqual(t, tree.Right.Value, tokRight)
+	assertEqual(t, tree.Left.Right.Value, tokLeftRight)
+	assertEqual(t, tree.Left.Left.Value, tokLeftLeft)
+	assertEqual(t, tree.Left.Left.Left.Value, tokLeftLeftLeft)
+	assertEqual(t, tree.Left.Left.Right.Value, tokLeftLeftRight)
 }
 
 func TestPrecedence(t *testing.T) {
@@ -41,7 +42,22 @@ func TestPrecedence(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	fmt.Printf("Tree stringified %v\n", program.Statements)
+	tree := program.Statements[0]
+	rootToken := token.NewToken(token.ADD, '+')
+	tokLeft := token.NewToken(token.ADD, '+')
+	tokRight := token.NewToken(token.MULT, '*')
+	tokLeftRight := token.NewToken(token.INT, '2')
+	tokLeftLeft := token.NewToken(token.INT, '1')
+	tokRightLeft := token.NewToken(token.INT, '4')
+	tokRightRight := token.NewToken(token.INT, '5')
+	assertEqual(t, tree.Value, rootToken)
+	assertEqual(t, tree.Left.Value, tokLeft)
+	assertEqual(t, tree.Left.Value, tokLeft)
+	assertEqual(t, tree.Right.Value, tokRight)
+	assertEqual(t, tree.Left.Right.Value, tokLeftRight)
+	assertEqual(t, tree.Left.Left.Value, tokLeftLeft)
+	assertEqual(t, tree.Right.Left.Value, tokRightLeft)
+	assertEqual(t, tree.Right.Right.Value, tokRightRight)
 }
 func TestPrecedenceTwo(t *testing.T) {
 	input := "1+2*4+5;"
@@ -49,6 +65,47 @@ func TestPrecedenceTwo(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	// fmt.Printf("%v\n", tok)
+	tree := program.Statements[0]
+	rootToken := token.NewToken(token.ADD, '+')
+	tokLeft := token.NewToken(token.ADD, '+')
+	tokRight := token.NewToken(token.INT, '5')
+
+	tokLeftRight := token.NewToken(token.MULT, '*')
+	tokLeftLeft := token.NewToken(token.INT, '1')
+	tokLeftRightLeft := token.NewToken(token.INT, '2')
+	tokLeftRightRight := token.NewToken(token.INT, '4')
+
+	assertEqual(t, tree.Value, rootToken)
+	assertEqual(t, tree.Left.Value, tokLeft)
+	assertEqual(t, tree.Right.Value, tokRight)
+	assertEqual(t, tree.Left.Right.Value, tokLeftRight)
+	assertEqual(t, tree.Left.Left.Value, tokLeftLeft)
+	assertEqual(t, tree.Left.Right.Left.Value, tokLeftRightLeft)
+	assertEqual(t, tree.Left.Right.Right.Value, tokLeftRightRight)
+	fmt.Printf("Tree stringified %v\n", program.Statements)
+}
+func TestPrecedenceBraces(t *testing.T) {
+	input := "(1+2)*(4+5);"
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	tree := program.Statements[0]
+	rootToken := token.NewToken(token.MULT, '*')
+	tokLeft := token.NewToken(token.ADD, '+')
+	tokRight := token.NewToken(token.ADD, '+')
+
+	tokLeftRight := token.NewToken(token.INT, '1')
+	tokLeftLeft := token.NewToken(token.INT, '2')
+	tokRightLeft := token.NewToken(token.INT, '4')
+	tokRightRight := token.NewToken(token.INT, '5')
+
+	assertEqual(t, tree.Value, rootToken)
+	assertEqual(t, tree.Left.Value, tokLeft)
+	assertEqual(t, tree.Right.Value, tokRight)
+	assertEqual(t, tree.Left.Right.Value, tokLeftRight)
+	assertEqual(t, tree.Left.Left.Value, tokLeftLeft)
+	assertEqual(t, tree.Right.Left.Value, tokRightLeft)
+	assertEqual(t, tree.Right.Right.Value, tokRightRight)
 	fmt.Printf("Tree stringified %v\n", program.Statements)
 }
