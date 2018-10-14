@@ -5,7 +5,6 @@ import (
 
 	"github.com/Fr0stb1t3/go-vtwin/lexer"
 	"github.com/Fr0stb1t3/go-vtwin/token"
-	log "github.com/sirupsen/logrus"
 )
 
 type Parser struct {
@@ -33,13 +32,13 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 
-type node struct {
-	Left  *node
+type Node struct {
+	Left  *Node
 	Value token.Token
-	Right *node
+	Right *Node
 }
 
-func (nd *node) String() string {
+func (nd *Node) String() string {
 	var out string
 
 	if nd.Left != nil {
@@ -52,9 +51,9 @@ func (nd *node) String() string {
 	return out
 }
 
-func (p *Parser) parseExpression() node {
+func (p *Parser) parseExpression() Node {
 	empty := token.Token{}
-	expression := node{}
+	expression := Node{}
 
 	// 1+2*4+5;
 	// 		 +
@@ -64,18 +63,18 @@ func (p *Parser) parseExpression() node {
 	for !p.tokenIs(token.SEMICOLON) {
 		if expression.Left != nil && expression.Value != empty && expression.Right != nil {
 			oldExpression := *(&expression)
-			expression = node{Left: &oldExpression}
+			expression = Node{Left: &oldExpression}
 		}
 		if p.curToken.Type.IsOpertor() {
 			if expression.Left.Value.Type.IsOpertor() &&
 				expression.Left.Value.Type.Precedence() < p.curToken.Type.Precedence() {
 				oldValue := *(&expression.Left.Right)
-				newRight := node{
+				newRight := Node{
 					Left:  oldValue,
 					Value: p.curToken,
 				}
 				p.nextToken()
-				newRight.Right = &node{Value: p.curToken}
+				newRight.Right = &Node{Value: p.curToken}
 				expression.Left.Right = &newRight
 				expression = *expression.Left
 			} else if expression.Value == empty {
@@ -83,9 +82,9 @@ func (p *Parser) parseExpression() node {
 			}
 		} else {
 			if expression.Left == nil {
-				expression.Left = &node{Value: p.curToken}
+				expression.Left = &Node{Value: p.curToken}
 			} else if expression.Right == nil {
-				expression.Right = &node{Value: p.curToken}
+				expression.Right = &Node{Value: p.curToken}
 			}
 		}
 		// log.Info("CUR EXPRESSION", expression)
@@ -93,12 +92,12 @@ func (p *Parser) parseExpression() node {
 		// log.Info("-----")
 		p.nextToken()
 	}
-	log.Info("expression", expression)
+	// log.Info("expression", expression)
 
 	return expression
 }
 
-func (p *Parser) parseStatement() *Statement {
+func (p *Parser) parseStatement() *Node {
 	switch p.curToken.Type {
 	case token.CONST:
 		fmt.Printf("parse as immutable assignment %v\n", p.curToken.Literal)
@@ -108,7 +107,8 @@ func (p *Parser) parseStatement() *Statement {
 		fmt.Printf("parse as return statement %v\n", p.curToken.Literal)
 	case token.INT:
 		if p.peekToken.Type.IsOpertor() {
-			p.parseExpression()
+			parent := p.parseExpression()
+			return &parent
 		}
 	default:
 		fmt.Printf("parse as expression statement %v \n", p.curToken.Literal)
@@ -150,14 +150,14 @@ func (p *Parser) parseToken(t token.Type) {
 	// exit.
 }
 
-type Statement struct{}
+// type Statement struct{}
 type Program struct {
-	Statements []Statement
+	Statements []Node
 }
 
 func (p *Parser) ParseProgram() *Program {
 	program := &Program{}
-	program.Statements = []Statement{}
+	program.Statements = []Node{}
 
 	for p.curToken.Type != token.EOF {
 		// stmt := p.parseToken(t)(p.curToken.Type)
