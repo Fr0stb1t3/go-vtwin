@@ -5,8 +5,44 @@ import (
 
 	"github.com/Fr0stb1t3/go-vtwin/lexer"
 	"github.com/Fr0stb1t3/go-vtwin/token"
-	"github.com/prometheus/common/log"
 )
+
+type Identifier struct {
+	Token token.Token // the token.IDENT token
+	Value string
+}
+
+func (i Identifier) String() string {
+	return i.Value
+}
+
+type LetStatement struct {
+	Token token.Token
+	Name  *Identifier
+	Value Expression
+}
+
+func (eS LetStatement) getTree() Expression {
+	return eS.Value
+}
+
+type Expression struct {
+	Left  *Expression
+	Value token.Token
+	Right *Expression
+}
+
+type Statement interface {
+	getTree() Expression
+}
+type ExpressionStatement struct {
+	Token      token.Token // the first token of the expression
+	Expression Expression
+}
+
+func (eS ExpressionStatement) getTree() Expression {
+	return eS.Expression
+}
 
 type Parser struct {
 	l      *lexer.Lexer
@@ -33,13 +69,7 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 
-type Node struct {
-	Left  *Node
-	Value token.Token
-	Right *Node
-}
-
-func (nd *Node) String() string {
+func (nd *Expression) String() string {
 	var out string
 
 	if nd.Left != nil {
@@ -52,14 +82,14 @@ func (nd *Node) String() string {
 	return out
 }
 
-func (p *Parser) parseExpression(endToken token.Type) Node {
+func (p *Parser) parseExpression(endToken token.Type) *Expression {
 	if endToken == token.RPAREN {
 		if p.tokenIs(token.LPAREN) {
 			p.nextToken()
 		}
 	}
 	empty := token.Token{}
-	expression := Node{}
+	expression := &Expression{}
 
 	for !p.tokenIs(endToken) {
 
@@ -67,43 +97,46 @@ func (p *Parser) parseExpression(endToken token.Type) Node {
 			if there is a open brace run call parse expression (recursion)
 		*/
 		if p.tokenIs(token.LPAREN) {
-			subNode := p.parseExpression(token.RPAREN)
+			subExpression := p.parseExpression(token.RPAREN)
 			if expression.Left == nil {
-				expression.Left = &subNode
+				expression.Left = subExpression
 			} else if expression.Right == nil {
-				expression.Right = &subNode
+				expression.Right = subExpression
 			}
 			p.nextToken()
 		}
 
 		/*
 			If there are more tokens
-			Moves the old expression to the left node
+			Moves the old expression to the left Expression
 		*/
 		if !p.tokenIs(endToken) &&
 			expression.Left != nil &&
 			expression.Value != empty &&
 			expression.Right != nil {
 			oldExpression := *(&expression)
-			expression = Node{Left: &oldExpression}
+			expression = &Expression{Left: oldExpression}
 		}
 		/*
-			If the left node has an operator next operator precedence
+			If the left Expression has an operator next operator precedence
 		*/
 		if expression.Left != nil &&
 			expression.Value.Type.IsOpertor() &&
 			p.peekPrecedence() > expression.Value.Type.Precedence() {
-			subNode := p.parseExpression(endToken)
-			expression.Right = &subNode
+			subExpression := p.parseExpression(endToken)
+			expression.Right = subExpression
 		}
 		if p.curToken.Type.IsOpertor() {
 			expression.Value = p.curToken
 		} else {
 			if expression.Left == nil {
-				expression.Left = &Node{Value: p.curToken}
+				expression.Left = &Expression{Value: p.curToken}
 			} else if expression.Right == nil {
-				expression.Right = &Node{Value: p.curToken}
+				expression.Right = &Expression{Value: p.curToken}
 			}
+		}
+		if p.tokenIs(endToken) {
+			return expression
 		}
 		if !p.peekTokenIs(token.EOF) {
 			p.nextToken()
@@ -112,76 +145,66 @@ func (p *Parser) parseExpression(endToken token.Type) Node {
 	return expression
 }
 
-func (p *Parser) parseStatement() *Node {
+func (p *Parser) parseLetStatement() *LetStatement {
+	assignment := &LetStatement{
+		Token: p.curToken,
+	}
+	if p.peekTokenIs(token.IDENT) {
+		p.nextToken()
+		assignment.Name = &Identifier{
+			Token: p.curToken,
+			Value: p.curToken.Literal,
+		}
+	}
+	if !p.peekTokenIs(token.ASSIGN) {
+		return nil
+	}
+	p.nextToken() // TODO
+	p.nextToken()
+	assignment.Value = Expression{
+		Value: p.curToken,
+	} // *p.parseExpression(token.SEMICOLON)
+	return assignment
+}
+func (p *Parser) parseStatement() Statement {
 	switch p.curToken.Type {
 	case token.CONST:
 		fmt.Printf("parse as immutable assignment %v\n", p.curToken.Literal)
 	case token.LET:
-		fmt.Printf("parse as mutable assignment %v\n", p.curToken.Literal)
+		return p.parseLetStatement()
 	case token.RETURN:
 		fmt.Printf("parse as return statement %v\n", p.curToken.Literal)
 	case token.LPAREN:
-		parent := p.parseExpression(token.SEMICOLON)
-		return &parent
+		expression := p.parseExpression(token.SEMICOLON)
+		return ExpressionStatement{
+			Expression: *expression,
+		}
 	case token.INT:
-		// if p.peekToken.Type.IsOpertor() {
-		parent := p.parseExpression(token.SEMICOLON)
-		return &parent
-	//	}
+		if p.peekToken.Type.IsOpertor() {
+			expression := p.parseExpression(token.SEMICOLON)
+			return ExpressionStatement{
+				Expression: *expression,
+			}
+			// return p.parseExpression(token.SEMICOLON)
+		}
 	default:
-		log.Info("Default", p.curToken)
-		fmt.Printf("parse as expression statement %v \n", p.curToken.Literal)
+		// log.Info("Default", p.curToken)
+		// fmt.Printf("parse as expression statement %v \n", p.curToken.Literal)
 	}
 	return nil
 }
 
-func (p *Parser) parseToken(t token.Type) {
-	fmt.Printf("parsing %v\n", t)
-	if t == token.INT {
-		fmt.Printf("push it to the output queue %v\n", t)
-		return
-	}
-
-	// while there are tokens to be read:
-	//     read a token.
-	//     if the token is a number, then:
-	//         push it to the output queue.
-	//     if the token is a function then:
-	//         push it onto the operator stack
-	//     if the token is an operator, then:
-	//         while ((there is a function at the top of the operator stack)
-	//                or (there is an operator at the top of the operator stack with greater precedence)
-	//                or (the operator at the top of the operator stack has equal precedence and is left associative))
-	//               and (the operator at the top of the operator stack is not a left bracket):
-	//             pop operators from the operator stack onto the output queue.
-	//         push it onto the operator stack.
-	//     if the token is a left bracket (i.e. "("), then:
-	//         push it onto the operator stack.
-	//     if the token is a right bracket (i.e. ")"), then:
-	//         while the operator at the top of the operator stack is not a left bracket:
-	//             pop the operator from the operator stack onto the output queue.
-	//         pop the left bracket from the stack.
-	//         /* if the stack runs out without finding a left bracket, then there are mismatched parentheses. */
-	// if there are no more tokens to read:
-	//     while there are still operator tokens on the stack:
-	//         /* if the operator token on the top of the stack is a bracket, then there are mismatched parentheses. */
-	//         pop the operator from the operator stack onto the output queue.
-	// exit.
-}
-
-// type Statement struct{}
 type Program struct {
-	Statements []Node
+	Statements []Statement
 }
 
 func (p *Parser) ParseProgram() *Program {
 	program := &Program{}
-	program.Statements = []Node{}
+	// var program.Statements []Statements
 	for p.curToken.Type != token.EOF {
-		// stmt := p.parseToken(t)(p.curToken.Type)
 		stmt := p.parseStatement()
 		if stmt != nil {
-			program.Statements = append(program.Statements, *stmt)
+			program.Statements = append(program.Statements, stmt)
 		}
 		p.nextToken()
 	}

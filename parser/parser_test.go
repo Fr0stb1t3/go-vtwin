@@ -20,14 +20,14 @@ func TestSimpleTree(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	tree := program.Statements[0]
+	tree := program.Statements[0].getTree()
 	rootToken := token.NewToken(token.SUBT, '-')
 	tokLeft := token.NewToken(token.ADD, '+')
-	tokRight := token.NewToken(token.INT, '5')
 	tokLeftRight := token.NewToken(token.INT, '4')
 	tokLeftLeft := token.NewToken(token.ADD, '+')
 	tokLeftLeftLeft := token.NewToken(token.INT, '1')
 	tokLeftLeftRight := token.NewToken(token.INT, '2')
+	tokRight := token.NewToken(token.INT, '5')
 	assertEqual(t, tree.Value, rootToken)
 	assertEqual(t, tree.Left.Value, tokLeft)
 	assertEqual(t, tree.Left.Value, tokLeft)
@@ -43,12 +43,14 @@ func TestPrecedence(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	tree := program.Statements[0]
+	tree := program.Statements[0].getTree()
 	rootToken := token.NewToken(token.ADD, '+')
+
 	tokLeft := token.NewToken(token.ADD, '+')
-	tokRight := token.NewToken(token.MULT, '*')
 	tokLeftRight := token.NewToken(token.INT, '2')
 	tokLeftLeft := token.NewToken(token.INT, '1')
+
+	tokRight := token.NewToken(token.MULT, '*')
 	tokRightLeft := token.NewToken(token.INT, '4')
 	tokRightRight := token.NewToken(token.INT, '5')
 	assertEqual(t, tree.Value, rootToken)
@@ -68,15 +70,16 @@ func TestPrecedenceTwo(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	tree := program.Statements[0]
+	tree := program.Statements[0].getTree()
 	rootToken := token.NewToken(token.ADD, '+')
 	tokLeft := token.NewToken(token.INT, '1')
 	tokRight := token.NewToken(token.ADD, '+')
 
 	tokRightLeft := token.NewToken(token.MULT, '*')
-	tokRightRight := token.NewToken(token.INT, '5')
 	tokRightLeftLeft := token.NewToken(token.INT, '2')
 	tokRightLeftRight := token.NewToken(token.INT, '4')
+
+	tokRightRight := token.NewToken(token.INT, '5')
 	// fmt.Printf("Tree stringified %v\n", program.Statements)
 	assertEqual(t, tree.Value, rootToken)
 	assertEqual(t, tree.Left.Value, tokLeft)
@@ -94,17 +97,18 @@ func TestPrecedenceBraces(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	tree := program.Statements[0]
+	tree := program.Statements[0].getTree()
 	rootToken := token.NewToken(token.MULT, '*')
-	tokLeft := token.NewToken(token.ADD, '+')
-	tokRight := token.NewToken(token.ADD, '+')
 
+	tokLeft := token.NewToken(token.ADD, '+')
 	tokLeftRight := token.NewToken(token.INT, '1')
 	tokLeftLeft := token.NewToken(token.INT, '2')
+
+	tokRight := token.NewToken(token.ADD, '+')
 	tokRightLeft := token.NewToken(token.INT, '4')
 	tokRightRight := token.NewToken(token.INT, '5')
 
-	fmt.Printf("Tree stringified %v\n", program.Statements)
+	// fmt.Printf("Tree stringified %v\n", program.Statements)
 	assertEqual(t, tree.Value, rootToken)
 	assertEqual(t, tree.Left.Value, tokLeft)
 	assertEqual(t, tree.Right.Value, tokRight)
@@ -120,25 +124,58 @@ func TestPrecedenceBracesTwo(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	tree := program.Statements[0]
-	/*
-		rootToken := token.NewToken(token.MULT, '*')
-		tokLeft := token.NewToken(token.ADD, '+')
-		tokRight := token.NewToken(token.ADD, '+')
+	tree := program.Statements[0].getTree()
 
-		tokLeftRight := token.NewToken(token.INT, '1')
-		tokLeftLeft := token.NewToken(token.INT, '2')
-		tokRightLeft := token.NewToken(token.INT, '4')
-		tokRightRight := token.NewToken(token.INT, '5')
-	*/
+	rootToken := token.NewToken(token.SUBT, '-')
+	tokLeft := token.NewToken(token.MULT, '*')
+	tokRight := token.NewToken(token.ADD, '+')
+	/**
+	tokLeft := token.NewToken(token.ADD, '+')
 
-	fmt.Printf("Tree stringified %v\n", tree)
+	tokLeftRight := token.NewToken(token.INT, '1')
+	tokLeftLeft := token.NewToken(token.INT, '2')
+	tokRightLeft := token.NewToken(token.INT, '4')
+	tokRightRight := token.NewToken(token.INT, '5')
+	/**/
+	// fmt.Printf("Tree stringified %v\n", tree)
+	assertEqual(t, tree.Value, rootToken)
+	assertEqual(t, tree.Left.Value, tokLeft)
+	assertEqual(t, tree.Right.Value, tokRight)
 	/*
-		assertEqual(t, tree.Value, rootToken)
-		assertEqual(t, tree.Left.Value, tokLeft)
-		assertEqual(t, tree.Right.Value, tokRight)
 		assertEqual(t, tree.Left.Right.Value, tokLeftRight)
 		assertEqual(t, tree.Left.Left.Value, tokLeftLeft)
 		assertEqual(t, tree.Right.Left.Value, tokRightLeft)
-		assertEqual(t, tree.Right.Right.Value, tokRightRight)*/
+		assertEqual(t, tree.Right.Right.Value, tokRightRight)
+	*/
+}
+
+func TestLetAssignment(t *testing.T) {
+	input := "let test := 1;"
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	tree := program.Statements[0]
+	fmt.Printf("Tree stringified %v\n", tree)
+	//
+	// rootToken := token.NewToken(token.SUBT, '-')
+	// tokLeft := token.NewToken(token.MULT, '*')
+	// tokRight := token.NewToken(token.ADD, '+')
+	/**
+	tokLeft := token.NewToken(token.ADD, '+')
+
+	tokLeftRight := token.NewToken(token.INT, '1')
+	tokLeftLeft := token.NewToken(token.INT, '2')
+	tokRightLeft := token.NewToken(token.INT, '4')
+	tokRightRight := token.NewToken(token.INT, '5')
+	/**/
+	// assertEqual(t, tree.Value, rootToken)
+	// assertEqual(t, tree.Left.Value, tokLeft)
+	// assertEqual(t, tree.Right.Value, tokRight)
+	/*
+		assertEqual(t, tree.Left.Right.Value, tokLeftRight)
+		assertEqual(t, tree.Left.Left.Value, tokLeftLeft)
+		assertEqual(t, tree.Right.Left.Value, tokRightLeft)
+		assertEqual(t, tree.Right.Right.Value, tokRightRight)
+	*/
 }
