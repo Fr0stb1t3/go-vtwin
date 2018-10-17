@@ -36,6 +36,10 @@ type BinaryExpression struct {
 	Right    *BinaryExpression
 }
 
+// switch l := e.X.(type) {
+func (e BinaryExpression) exprNode() {
+
+}
 func (e *BinaryExpression) completeNode() bool {
 	return e.Left != nil &&
 		e.Operator != token.Token{} &&
@@ -93,6 +97,7 @@ func (nd *BinaryExpression) String() string {
 	var out string
 
 	if nd.Left != nil {
+		//	right := nd.Right.(BinaryExpression)
 		out = " <" + out + nd.Left.String()
 	}
 	out = out + nd.Operator.Literal

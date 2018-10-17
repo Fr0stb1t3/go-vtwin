@@ -29,6 +29,7 @@ func TestSimpleTree(t *testing.T) {
 	tokLeftLeftRight := token.NewToken(token.INT, '2')
 	tokRight := token.NewToken(token.INT, '5')
 	assertEqual(t, tree.Operator, rootToken)
+
 	assertEqual(t, tree.Left.Operator, tokLeft)
 	assertEqual(t, tree.Left.Operator, tokLeft)
 	assertEqual(t, tree.Right.Operator, tokRight)
