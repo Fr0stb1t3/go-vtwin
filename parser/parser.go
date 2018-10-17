@@ -27,9 +27,25 @@ func (eS LetStatement) getTree() Expression {
 }
 
 type Expression struct {
-	Left  *Expression
-	Value token.Token
-	Right *Expression
+	Left     *Expression
+	Operator token.Token
+	Right    *Expression
+}
+
+func (e *Expression) completeNode() bool {
+	return e.Left != nil &&
+		e.Operator != token.Token{} &&
+		e.Right != nil
+}
+func (e *Expression) addSubnode(subEx *Expression) {
+	if e.Left == nil {
+		e.Left = subEx
+		return
+	} else if e.Right == nil {
+		e.Right = subEx
+		return
+	}
+	panic("Expression node is full")
 }
 
 type Statement interface {
@@ -75,7 +91,7 @@ func (nd *Expression) String() string {
 	if nd.Left != nil {
 		out = " <" + out + nd.Left.String()
 	}
-	out = out + nd.Value.Literal
+	out = out + nd.Operator.Literal
 	if nd.Right != nil {
 		out = out + nd.Right.String() + "> "
 	}
@@ -88,21 +104,16 @@ func (p *Parser) parseExpression(endToken token.Type) *Expression {
 			p.nextToken()
 		}
 	}
-	empty := token.Token{}
 	expression := &Expression{}
 
 	for !p.tokenIs(endToken) {
 
 		/*
-			if there is a open brace run call parse expression (recursion)
+			if there is a open brace call parse expression (recursion)
 		*/
 		if p.tokenIs(token.LPAREN) {
 			subExpression := p.parseExpression(token.RPAREN)
-			if expression.Left == nil {
-				expression.Left = subExpression
-			} else if expression.Right == nil {
-				expression.Right = subExpression
-			}
+			expression.addSubnode(subExpression)
 			p.nextToken()
 		}
 
@@ -111,9 +122,7 @@ func (p *Parser) parseExpression(endToken token.Type) *Expression {
 			Moves the old expression to the left Expression
 		*/
 		if !p.tokenIs(endToken) &&
-			expression.Left != nil &&
-			expression.Value != empty &&
-			expression.Right != nil {
+			expression.completeNode() {
 			oldExpression := *(&expression)
 			expression = &Expression{Left: oldExpression}
 		}
@@ -121,22 +130,16 @@ func (p *Parser) parseExpression(endToken token.Type) *Expression {
 			If the left Expression has an operator next operator precedence
 		*/
 		if expression.Left != nil &&
-			expression.Value.Type.IsOpertor() &&
-			p.peekPrecedence() > expression.Value.Type.Precedence() {
+			expression.Operator.Type.IsOpertor() &&
+			p.peekPrecedence() > expression.Operator.Type.Precedence() {
 			subExpression := p.parseExpression(endToken)
 			expression.Right = subExpression
 		}
 		if p.curToken.Type.IsOpertor() {
-			expression.Value = p.curToken
-		} else {
-			if expression.Left == nil {
-				expression.Left = &Expression{Value: p.curToken}
-			} else if expression.Right == nil {
-				expression.Right = &Expression{Value: p.curToken}
-			}
-		}
-		if p.tokenIs(endToken) {
-			return expression
+			expression.Operator = p.curToken
+		} else if !p.tokenIs(endToken) {
+			leaf := &Expression{Operator: p.curToken}
+			expression.addSubnode(leaf)
 		}
 		if !p.peekTokenIs(token.EOF) {
 			p.nextToken()
@@ -162,7 +165,7 @@ func (p *Parser) parseLetStatement() *LetStatement {
 	p.nextToken() // TODO
 	p.nextToken()
 	assignment.Value = Expression{
-		Value: p.curToken,
+		Operator: p.curToken,
 	} // *p.parseExpression(token.SEMICOLON)
 	return assignment
 }
