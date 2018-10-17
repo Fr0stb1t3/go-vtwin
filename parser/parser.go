@@ -7,6 +7,10 @@ import (
 	"github.com/Fr0stb1t3/go-vtwin/token"
 )
 
+type Expression interface {
+	exprNode()
+}
+
 type Identifier struct {
 	Token token.Token // the token.IDENT token
 	Value string
@@ -19,25 +23,25 @@ func (i Identifier) String() string {
 type LetStatement struct {
 	Token token.Token
 	Name  *Identifier
-	Value Expression
+	Value BinaryExpression
 }
 
-func (eS LetStatement) getTree() Expression {
+func (eS LetStatement) getTree() BinaryExpression {
 	return eS.Value
 }
 
-type Expression struct {
-	Left     *Expression
+type BinaryExpression struct {
+	Left     *BinaryExpression
 	Operator token.Token
-	Right    *Expression
+	Right    *BinaryExpression
 }
 
-func (e *Expression) completeNode() bool {
+func (e *BinaryExpression) completeNode() bool {
 	return e.Left != nil &&
 		e.Operator != token.Token{} &&
 		e.Right != nil
 }
-func (e *Expression) addSubnode(subEx *Expression) {
+func (e *BinaryExpression) addSubnode(subEx *BinaryExpression) {
 	if e.Left == nil {
 		e.Left = subEx
 		return
@@ -45,19 +49,19 @@ func (e *Expression) addSubnode(subEx *Expression) {
 		e.Right = subEx
 		return
 	}
-	panic("Expression node is full")
+	panic("BinaryExpression node is full")
 }
 
 type Statement interface {
-	getTree() Expression
+	getTree() BinaryExpression
 }
 type ExpressionStatement struct {
-	Token      token.Token // the first token of the expression
-	Expression Expression
+	Token            token.Token // the first token of the expression
+	BinaryExpression BinaryExpression
 }
 
-func (eS ExpressionStatement) getTree() Expression {
-	return eS.Expression
+func (eS ExpressionStatement) getTree() BinaryExpression {
+	return eS.BinaryExpression
 }
 
 type Parser struct {
@@ -85,7 +89,7 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 
-func (nd *Expression) String() string {
+func (nd *BinaryExpression) String() string {
 	var out string
 
 	if nd.Left != nil {
@@ -98,13 +102,13 @@ func (nd *Expression) String() string {
 	return out
 }
 
-func (p *Parser) parseExpression(endToken token.Type) *Expression {
+func (p *Parser) parseExpression(endToken token.Type) *BinaryExpression {
 	if endToken == token.RPAREN {
 		if p.tokenIs(token.LPAREN) {
 			p.nextToken()
 		}
 	}
-	expression := &Expression{}
+	expression := &BinaryExpression{}
 
 	for !p.tokenIs(endToken) {
 
@@ -119,18 +123,17 @@ func (p *Parser) parseExpression(endToken token.Type) *Expression {
 
 		/*
 			If there are more tokens
-			Moves the old expression to the left Expression
+			Moves the old expression to the left BinaryExpression
 		*/
 		if !p.tokenIs(endToken) &&
 			expression.completeNode() {
 			oldExpression := *(&expression)
-			expression = &Expression{Left: oldExpression}
+			expression = &BinaryExpression{Left: oldExpression}
 		}
 		/*
-			If the left Expression has an operator next operator precedence
+			If the BinaryExpression has an operator next operator precedence
 		*/
-		if expression.Left != nil &&
-			expression.Operator.Type.IsOpertor() &&
+		if expression.Operator.Type.IsOpertor() &&
 			p.peekPrecedence() > expression.Operator.Type.Precedence() {
 			subExpression := p.parseExpression(endToken)
 			expression.Right = subExpression
@@ -138,7 +141,7 @@ func (p *Parser) parseExpression(endToken token.Type) *Expression {
 		if p.curToken.Type.IsOpertor() {
 			expression.Operator = p.curToken
 		} else if !p.tokenIs(endToken) {
-			leaf := &Expression{Operator: p.curToken}
+			leaf := &BinaryExpression{Operator: p.curToken}
 			expression.addSubnode(leaf)
 		}
 		if !p.peekTokenIs(token.EOF) {
@@ -164,7 +167,7 @@ func (p *Parser) parseLetStatement() *LetStatement {
 	}
 	p.nextToken() // TODO
 	p.nextToken()
-	assignment.Value = Expression{
+	assignment.Value = BinaryExpression{
 		Operator: p.curToken,
 	} // *p.parseExpression(token.SEMICOLON)
 	return assignment
@@ -180,13 +183,13 @@ func (p *Parser) parseStatement() Statement {
 	case token.LPAREN:
 		expression := p.parseExpression(token.SEMICOLON)
 		return ExpressionStatement{
-			Expression: *expression,
+			BinaryExpression: *expression,
 		}
 	case token.INT:
 		if p.peekToken.Type.IsOpertor() {
 			expression := p.parseExpression(token.SEMICOLON)
 			return ExpressionStatement{
-				Expression: *expression,
+				BinaryExpression: *expression,
 			}
 			// return p.parseExpression(token.SEMICOLON)
 		}
