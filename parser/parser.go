@@ -200,7 +200,6 @@ type Program struct {
 
 func (p *Parser) ParseProgram() *Program {
 	program := &Program{}
-	// var program.Statements []Statements
 	for p.curToken.Type != token.EOF {
 		stmt := p.parseStatement()
 		if stmt != nil {
