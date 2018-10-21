@@ -27,21 +27,24 @@ func divide(A int, B int) int {
 	return A / B
 }
 
-func evaluateBranch(ex BinaryExpression) int {
-	if ex.Operator.Type.IsOpertor() {
-		return evaluateExpression(ex)
+func evaluateUnaryExpr(ex Expression) int {
+	uax := ex.(UnaryExpression)
+	// fmt.Printf("Tree stringified %v\n", uax)
+	switch uax.Operand.Type {
+	case token.INT:
+		val, _ := strconv.Atoi(uax.Operand.Literal)
+		return val
+	default:
+		panic("evaluateUnaryExpr: Unknown type")
 	}
-	val, _ := strconv.Atoi(ex.Operator.Literal)
-	return val
-
 }
 
-func evaluate(op token.Token, left BinaryExpression, right BinaryExpression) int {
+func evaluateBinaryExpr(ex Expression) int {
+	be := ex.(BinaryExpression)
+	a := evaluateExpression(be.Left)
+	b := evaluateExpression(be.Right)
 
-	a := evaluateBranch(left)
-	b := evaluateBranch(right)
-
-	switch op.Type {
+	switch be.Operator.Type {
 	case token.ADD:
 		return add(a, b)
 	case token.SUBT:
@@ -57,16 +60,36 @@ func evaluate(op token.Token, left BinaryExpression, right BinaryExpression) int
 func evaluateExpression(ex Expression) int {
 	switch ex.(type) {
 	case BinaryExpression:
-		be := ex.(BinaryExpression)
-		op := be.Operator
-		left := *be.Left
-		right := *be.Right
-		res := evaluate(op, left, right)
-		return res
+		return evaluateBinaryExpr(ex)
 	case UnaryExpression:
-		fmt.Printf("Tree stringified %v\n", ex)
+		return evaluateUnaryExpr(ex)
 	}
 	return 0
+}
+
+type result struct {
+	number int
+	ident  string
+}
+
+func runStatement(stmt Statement) result {
+	switch stmt.(type) {
+	case ExpressionStatement:
+		es := stmt.(ExpressionStatement)
+		val := evaluateExpression(es.Expr)
+		return result{
+			number: val,
+		}
+	case LetStatement:
+		ls := stmt.(LetStatement)
+
+		val := evaluateExpression(ls.Expr)
+		return result{
+			ident:  ls.Name.Value,
+			number: val,
+		}
+	}
+	return result{}
 }
 
 func TestEvaluate(t *testing.T) {
@@ -75,9 +98,8 @@ func TestEvaluate(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	tree := program.Statements[0].getTree()
-	res := evaluateExpression(tree)
-	assertEqual(t, res, 4)
+	res := runStatement(program.Statements[0])
+	assertEqual(t, res.number, 4)
 }
 func TestSimpleTree(t *testing.T) {
 	input := "1+2+4-5;" //2*7+3;3+2*7;
@@ -85,9 +107,8 @@ func TestSimpleTree(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	tree := program.Statements[0].getTree()
-	res := evaluateExpression(tree)
-	assertEqual(t, res, 2)
+	res := runStatement(program.Statements[0])
+	assertEqual(t, res.number, 2)
 }
 
 func TestPrecedence(t *testing.T) {
@@ -95,9 +116,8 @@ func TestPrecedence(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	tree := program.Statements[0].getTree()
-	res := evaluateExpression(tree)
-	assertEqual(t, res, 23)
+	res := runStatement(program.Statements[0])
+	assertEqual(t, res.number, 23)
 }
 
 func TestPrecedenceTwo(t *testing.T) {
@@ -106,10 +126,8 @@ func TestPrecedenceTwo(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	tree := program.Statements[0].getTree()
-
-	res := evaluateExpression(tree)
-	assertEqual(t, res, 14)
+	res := runStatement(program.Statements[0])
+	assertEqual(t, res.number, 14)
 }
 
 func TestPrecedenceBraces(t *testing.T) {
@@ -118,26 +136,23 @@ func TestPrecedenceBraces(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	tree := program.Statements[0].getTree()
-
-	res := evaluateExpression(tree)
-	assertEqual(t, res, 27)
+	res := runStatement(program.Statements[0])
+	assertEqual(t, res.number, 27)
 }
 
+/*
 func TestPrecedenceBracesTwo(t *testing.T) {
 	input := "(2+1)*(4+5)-6/3+5;"
 
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	tree := program.Statements[0].getTree()
+	res := runStatement(program.Statements[0])
 
-	res := evaluateExpression(tree)
-
-	assertEqual(t, res, 30)
+	assertEqual(t, res.number, 30)
 
 }
-
+*/
 func TestLetAssignment(t *testing.T) {
 	input := "let test := 1;"
 
@@ -146,25 +161,7 @@ func TestLetAssignment(t *testing.T) {
 	program := p.ParseProgram()
 	tree := program.Statements[0]
 	fmt.Printf("Tree stringified %v\n", tree)
-	//
-	// rootToken := token.NewToken(token.SUBT, '-')
-	// tokLeft := token.NewToken(token.MULT, '*')
-	// tokRight := token.NewToken(token.ADD, '+')
-	/**
-	tokLeft := token.NewToken(token.ADD, '+')
-
-	tokLeftRight := token.NewToken(token.INT, '1')
-	tokLeftLeft := token.NewToken(token.INT, '2')
-	tokRightLeft := token.NewToken(token.INT, '4')
-	tokRightRight := token.NewToken(token.INT, '5')
-	/**/
-	// assertEqual(t, tree.Operator, rootToken)
-	// assertEqual(t, tree.Left.Operator, tokLeft)
-	// assertEqual(t, tree.Right.Operator, tokRight)
-	/*
-		assertEqual(t, tree.Left.Right.Operator, tokLeftRight)
-		assertEqual(t, tree.Left.Left.Operator, tokLeftLeft)
-		assertEqual(t, tree.Right.Left.Operator, tokRightLeft)
-		assertEqual(t, tree.Right.Right.Operator, tokRightRight)
-	*/
+	res := runStatement(program.Statements[0])
+	assertEqual(t, res.number, 1)
+	assertEqual(t, res.ident, "test")
 }

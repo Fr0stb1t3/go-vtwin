@@ -23,14 +23,16 @@ func (i Identifier) String() string {
 type LetStatement struct {
 	Token token.Token
 	Name  *Identifier
-	Value BinaryExpression
+	Expr  Expression
 }
 
-func (eS LetStatement) getTree() BinaryExpression {
-	return eS.Value
+func (eS LetStatement) getTree() Expression {
+	return eS.Expr
 }
 
 type UnaryExpression struct {
+	Operator token.Token
+	Operand  token.Token
 }
 
 // switch l := e.X.(type) {
@@ -38,10 +40,15 @@ func (e UnaryExpression) exprNode() {
 
 }
 
+//
+// func (nd *UnaryExpression) String() string {
+// 	return nd.Operand.Literal
+// }
+
 type BinaryExpression struct {
-	Left     *BinaryExpression
+	Left     Expression
 	Operator token.Token
-	Right    *BinaryExpression
+	Right    Expression
 }
 
 // switch l := e.X.(type) {
@@ -53,7 +60,7 @@ func (e *BinaryExpression) completeNode() bool {
 		e.Operator != token.Token{} &&
 		e.Right != nil
 }
-func (e *BinaryExpression) addSubnode(subEx *BinaryExpression) {
+func (e *BinaryExpression) addSubnode(subEx Expression) {
 	if e.Left == nil {
 		e.Left = subEx
 		return
@@ -64,16 +71,15 @@ func (e *BinaryExpression) addSubnode(subEx *BinaryExpression) {
 	panic("BinaryExpression node is full")
 }
 
-type Statement interface {
-	getTree() BinaryExpression
-}
-type ExpressionStatement struct {
-	Token            token.Token // the first token of the expression
-	BinaryExpression BinaryExpression
+func (nd *BinaryExpression) String() string {
+	return nd.Operator.Literal
 }
 
-func (eS ExpressionStatement) getTree() BinaryExpression {
-	return eS.BinaryExpression
+type Statement interface {
+}
+type ExpressionStatement struct {
+	Token token.Token // the first token of the expression
+	Expr  Expression
 }
 
 type Parser struct {
@@ -101,27 +107,13 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 
-func (nd *BinaryExpression) String() string {
-	var out string
-
-	if nd.Left != nil {
-		//	right := nd.Right.(BinaryExpression)
-		out = " <" + out + nd.Left.String()
-	}
-	out = out + nd.Operator.Literal
-	if nd.Right != nil {
-		out = out + nd.Right.String() + "> "
-	}
-	return out
-}
-
-func (p *Parser) parseExpression(endToken token.Type) *BinaryExpression {
+func (p *Parser) parseExpression(endToken token.Type) Expression {
 	if endToken == token.RPAREN {
 		if p.tokenIs(token.LPAREN) {
 			p.nextToken()
 		}
 	}
-	expression := &BinaryExpression{}
+	expression := BinaryExpression{}
 
 	for !p.tokenIs(endToken) {
 
@@ -140,8 +132,8 @@ func (p *Parser) parseExpression(endToken token.Type) *BinaryExpression {
 		*/
 		if !p.tokenIs(endToken) &&
 			expression.completeNode() {
-			oldExpression := *(&expression)
-			expression = &BinaryExpression{Left: oldExpression}
+			oldExpression := expression
+			expression = BinaryExpression{Left: oldExpression}
 		}
 		/*
 			If the BinaryExpression has an operator next operator precedence
@@ -154,7 +146,11 @@ func (p *Parser) parseExpression(endToken token.Type) *BinaryExpression {
 		if p.curToken.Type.IsOpertor() {
 			expression.Operator = p.curToken
 		} else if !p.tokenIs(endToken) {
-			leaf := &BinaryExpression{Operator: p.curToken}
+			operand := token.NewToken(token.ADD, '+')
+			leaf := UnaryExpression{
+				Operator: operand,
+				Operand:  p.curToken,
+			}
 			expression.addSubnode(leaf)
 		}
 		if !p.peekTokenIs(token.EOF) {
@@ -164,8 +160,8 @@ func (p *Parser) parseExpression(endToken token.Type) *BinaryExpression {
 	return expression
 }
 
-func (p *Parser) parseLetStatement() *LetStatement {
-	assignment := &LetStatement{
+func (p *Parser) parseLetStatement() LetStatement {
+	assignment := LetStatement{
 		Token: p.curToken,
 	}
 	if p.peekTokenIs(token.IDENT) {
@@ -176,13 +172,15 @@ func (p *Parser) parseLetStatement() *LetStatement {
 		}
 	}
 	if !p.peekTokenIs(token.ASSIGN) {
-		return nil
+		panic("Invalid Let assignment")
 	}
 	p.nextToken() // TODO
 	p.nextToken()
-	assignment.Value = BinaryExpression{
-		Operator: p.curToken,
-	} // *p.parseExpression(token.SEMICOLON)
+	operand := token.NewToken(token.ADD, '+')
+	assignment.Expr = UnaryExpression{
+		Operator: operand,
+		Operand:  p.curToken,
+	}
 	return assignment
 }
 func (p *Parser) parseStatement() Statement {
@@ -196,13 +194,13 @@ func (p *Parser) parseStatement() Statement {
 	case token.LPAREN:
 		expression := p.parseExpression(token.SEMICOLON)
 		return ExpressionStatement{
-			BinaryExpression: *expression,
+			Expr: expression,
 		}
 	case token.INT:
 		if p.peekToken.Type.IsOpertor() {
 			expression := p.parseExpression(token.SEMICOLON)
 			return ExpressionStatement{
-				BinaryExpression: *expression,
+				Expr: expression,
 			}
 			// return p.parseExpression(token.SEMICOLON)
 		}
