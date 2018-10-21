@@ -30,6 +30,14 @@ func (eS LetStatement) getTree() BinaryExpression {
 	return eS.Value
 }
 
+type UnaryExpression struct {
+}
+
+// switch l := e.X.(type) {
+func (e UnaryExpression) exprNode() {
+
+}
+
 type BinaryExpression struct {
 	Left     *BinaryExpression
 	Operator token.Token
