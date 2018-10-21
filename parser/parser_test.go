@@ -29,7 +29,6 @@ func divide(A int, B int) int {
 
 func evaluateUnaryExpr(ex Expression) int {
 	uax := ex.(UnaryExpression)
-	// fmt.Printf("Tree stringified %v\n", uax)
 	switch uax.Operand.Type {
 	case token.INT:
 		val, _ := strconv.Atoi(uax.Operand.Literal)
@@ -82,7 +81,6 @@ func runStatement(stmt Statement) result {
 		}
 	case LetStatement:
 		ls := stmt.(LetStatement)
-
 		val := evaluateExpression(ls.Expr)
 		return result{
 			ident:  ls.Name.Value,
@@ -101,48 +99,30 @@ func TestEvaluate(t *testing.T) {
 	res := runStatement(program.Statements[0])
 	assertEqual(t, res.number, 4)
 }
-func TestSimpleTree(t *testing.T) {
-	input := "1+2+4-5;" //2*7+3;3+2*7;
+func TestBasicMathTrees(t *testing.T) {
+	// TODO fix expressionParse
+	input := `1+2+4-5;
+						1+2+4*5;;
+						1+2*4+5;;
+						(2+1)*(4+5);
+	`
 
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
 	res := runStatement(program.Statements[0])
+	resPrecedence := runStatement(program.Statements[1])
+	resPrecedenceTwo := runStatement(program.Statements[2])
+	resBraces := runStatement(program.Statements[3])
+
 	assertEqual(t, res.number, 2)
-}
-
-func TestPrecedence(t *testing.T) {
-	input := "1+2+4*5;"
-	l := lexer.New(input)
-	p := New(l)
-	program := p.ParseProgram()
-	res := runStatement(program.Statements[0])
-	assertEqual(t, res.number, 23)
+	assertEqual(t, resPrecedence.number, 23)
+	assertEqual(t, resPrecedenceTwo.number, 14)
+	assertEqual(t, resBraces.number, 27)
 }
 
 func TestPrecedenceTwo(t *testing.T) {
-	input := "1+2*4+5;"
-
-	l := lexer.New(input)
-	p := New(l)
-	program := p.ParseProgram()
-	res := runStatement(program.Statements[0])
-	assertEqual(t, res.number, 14)
-}
-
-func TestPrecedenceBraces(t *testing.T) {
-	input := "(2+1)*(4+5);"
-
-	l := lexer.New(input)
-	p := New(l)
-	program := p.ParseProgram()
-	res := runStatement(program.Statements[0])
-	assertEqual(t, res.number, 27)
-}
-
-/*
-func TestPrecedenceBracesTwo(t *testing.T) {
-	input := "(2+1)*(4+5)-6/3+5;"
+	input := "27-6/3+5;"
 
 	l := lexer.New(input)
 	p := New(l)
@@ -152,7 +132,8 @@ func TestPrecedenceBracesTwo(t *testing.T) {
 	assertEqual(t, res.number, 30)
 
 }
-*/
+
+/**/
 func TestLetAssignment(t *testing.T) {
 	input := "let test := 1;"
 

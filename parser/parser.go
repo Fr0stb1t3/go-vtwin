@@ -107,7 +107,22 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 
-func (p *Parser) parseExpression(endToken token.Type) Expression {
+/*
+Breaks on precence parsing example
+expected:
+			+
+	 -    5
+27	/
+	6  3
+
+Actual
+
+	 -
+27   +
+		/  5
+	6  3
+*/
+func (p *Parser) parseBinaryExpr(endToken token.Type) Expression {
 	if endToken == token.RPAREN {
 		if p.tokenIs(token.LPAREN) {
 			p.nextToken()
@@ -158,6 +173,10 @@ func (p *Parser) parseExpression(endToken token.Type) Expression {
 		}
 	}
 	return expression
+}
+
+func (p *Parser) parseExpression(endToken token.Type) Expression {
+	return p.parseBinaryExpr(endToken)
 }
 
 func (p *Parser) parseLetStatement() LetStatement {
