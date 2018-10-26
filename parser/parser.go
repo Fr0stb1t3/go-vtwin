@@ -136,7 +136,7 @@ func (p *Parser) parseBinaryExpr(endToken token.Type) Expression {
 			if there is a open brace call parse expression (recursion)
 		*/
 		if p.tokenIs(token.LPAREN) {
-			subExpression := p.parseExpression(token.RPAREN)
+			subExpression := p.parseBinaryExpr(token.RPAREN)
 			expression.addSubnode(subExpression)
 			p.nextToken()
 		}
@@ -155,18 +155,35 @@ func (p *Parser) parseBinaryExpr(endToken token.Type) Expression {
 		*/
 		if expression.Operator.Type.IsOpertor() &&
 			p.peekPrecedence() > expression.Operator.Type.Precedence() {
-			subExpression := p.parseExpression(endToken)
+			subExpression := BinaryExpression{}
+			operand := token.NewToken(token.ADD, '+')
+			expr := UnaryExpression{
+				Operator: operand,
+				Operand:  p.curToken,
+			}
+			subExpression.addSubnode(expr)
+			p.nextToken()
+			subExpression.Operator = p.curToken
+			p.nextToken()
+			expr = UnaryExpression{
+				Operator: operand,
+				Operand:  p.curToken,
+			}
+			subExpression.addSubnode(expr)
+			// subExpression := p.parseExpression(endToken)
 			expression.Right = subExpression
+			p.nextToken()
+			continue
 		}
 		if p.curToken.Type.IsOpertor() {
 			expression.Operator = p.curToken
 		} else if !p.tokenIs(endToken) {
 			operand := token.NewToken(token.ADD, '+')
-			leaf := UnaryExpression{
+			expr := UnaryExpression{
 				Operator: operand,
 				Operand:  p.curToken,
 			}
-			expression.addSubnode(leaf)
+			expression.addSubnode(expr)
 		}
 		if !p.peekTokenIs(token.EOF) {
 			p.nextToken()
@@ -218,6 +235,7 @@ func (p *Parser) parseStatement() Statement {
 	case token.INT:
 		if p.peekToken.Type.IsOpertor() {
 			expression := p.parseExpression(token.SEMICOLON)
+
 			return ExpressionStatement{
 				Expr: expression,
 			}

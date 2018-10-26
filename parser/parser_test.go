@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"strconv"
 	"testing"
 
@@ -43,6 +42,7 @@ func evaluateBinaryExpr(ex Expression) int {
 	a := evaluateExpression(be.Left)
 	b := evaluateExpression(be.Right)
 
+	// fmt.Printf("parse as immutable assignment %v\n", be)
 	switch be.Operator.Type {
 	case token.ADD:
 		return add(a, b)
@@ -90,20 +90,13 @@ func runStatement(stmt Statement) result {
 	return result{}
 }
 
-func TestEvaluate(t *testing.T) {
-	input := "1+1+2;" //2*7+3;3+2*7;
-
-	l := lexer.New(input)
-	p := New(l)
-	program := p.ParseProgram()
-	res := runStatement(program.Statements[0])
-	assertEqual(t, res.number, 4)
-}
+/*
+ */
 func TestBasicMathTrees(t *testing.T) {
 	// TODO fix expressionParse
 	input := `1+2+4-5;
-						1+2+4*5;;
-						1+2*4+5;;
+						1+2+4*5;
+						1+2*4+5;
 						(2+1)*(4+5);
 	`
 
@@ -120,7 +113,6 @@ func TestBasicMathTrees(t *testing.T) {
 	assertEqual(t, resPrecedenceTwo.number, 14)
 	assertEqual(t, resBraces.number, 27)
 }
-
 func TestPrecedenceTwo(t *testing.T) {
 	input := "27-6/3+5;"
 
@@ -133,7 +125,7 @@ func TestPrecedenceTwo(t *testing.T) {
 
 }
 
-/**/
+/*
 func TestLetAssignment(t *testing.T) {
 	input := "let test := 1;"
 
@@ -145,4 +137,4 @@ func TestLetAssignment(t *testing.T) {
 	res := runStatement(program.Statements[0])
 	assertEqual(t, res.number, 1)
 	assertEqual(t, res.ident, "test")
-}
+}*/
