@@ -35,10 +35,6 @@ type UnaryExpression struct {
 	Operand  token.Token
 }
 
-// switch l := e.X.(type) {
-func (e UnaryExpression) String() string {
-	return e.Operand.Literal
-}
 func (e UnaryExpression) exprNode() {
 
 }
@@ -57,6 +53,11 @@ type BinaryExpression struct {
 // switch l := e.X.(type) {
 func (e BinaryExpression) exprNode() {
 
+}
+func (e *BinaryExpression) emptyNode() bool {
+	return e.Left == nil &&
+		e.Operator == token.Token{} &&
+		e.Right == nil
 }
 func (e *BinaryExpression) completeNode() bool {
 	return e.Left != nil &&
@@ -110,35 +111,19 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 
-/*
-Breaks on precence parsing example
-Actual:
-			*
-	 -    5
-27	/
-	6  3
-
-Wanted
-
-	 -
-27   *
-		/  5
-	6  3
-*/
-
 func (p *Parser) parseUnaryExpr() Expression {
-	operand := token.NewToken(token.ADD, '+') // Fix me
+	operator := token.NewToken(token.ADD, '+')
+	switch p.curToken.Type {
+	case token.ADD, token.SUBT, token.NOT, token.XOR, token.AND:
+		operator = p.curToken
+		p.nextToken()
+	}
 	return UnaryExpression{
-		Operator: operand,
+		Operator: operator,
 		Operand:  p.curToken,
 	}
 }
 func (p *Parser) parseBinaryExpr(endToken token.Type, rhs bool, prec int) Expression {
-	if endToken == token.RPAREN {
-		if p.tokenIs(token.LPAREN) {
-			p.nextToken()
-		}
-	}
 	expression := BinaryExpression{}
 
 	for !p.tokenIs(endToken) {
@@ -156,12 +141,15 @@ func (p *Parser) parseBinaryExpr(endToken token.Type, rhs bool, prec int) Expres
 		}
 
 		switch {
-		case p.curToken.Type.IsOpertor():
-			expression.Operator = p.curToken
 		case p.tokenIs(token.LPAREN):
+			p.nextToken()
 			subExpression := p.parseExpression(token.RPAREN)
 			expression.addSubnode(subExpression)
-
+		case expression.emptyNode():
+			leaf := p.parseUnaryExpr()
+			expression.addSubnode(leaf)
+		case p.curToken.Type.IsOpertor() && !expression.Operator.Type.IsOpertor():
+			expression.Operator = p.curToken
 		case rhs && expression.Operator.Type.IsOpertor() && p.peekPrecedence() > prec:
 			leaf := p.parseUnaryExpr()
 			expression.addSubnode(leaf)
@@ -186,8 +174,12 @@ func (p *Parser) parseBinaryExpr(endToken token.Type, rhs bool, prec int) Expres
 }
 
 func (p *Parser) parseExpression(endToken token.Type) Expression {
-
-	return p.parseBinaryExpr(endToken, false, 0)
+	switch {
+	case p.tokenIs(token.LPAREN), p.peekToken.Type.IsOpertor():
+		return p.parseBinaryExpr(endToken, false, 0)
+	default:
+		return p.parseUnaryExpr()
+	}
 }
 
 func (p *Parser) parseLetStatement() LetStatement {
@@ -206,11 +198,9 @@ func (p *Parser) parseLetStatement() LetStatement {
 	}
 	p.nextToken() // TODO
 	p.nextToken()
-	operand := token.NewToken(token.ADD, '+')
-	assignment.Expr = UnaryExpression{
-		Operator: operand,
-		Operand:  p.curToken,
-	}
+	// operand := token.NewToken(token.ADD, '+')
+
+	assignment.Expr = p.parseExpression(token.SEMICOLON)
 	return assignment
 }
 func (p *Parser) parseStatement() Statement {

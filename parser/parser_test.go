@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -30,7 +31,7 @@ func evaluateUnaryExpr(ex Expression) int {
 	uax := ex.(UnaryExpression)
 	switch uax.Operand.Type {
 	case token.INT:
-		val, _ := strconv.Atoi(uax.Operand.Literal)
+		val, _ := strconv.Atoi(uax.Operator.Literal + uax.Operand.Literal)
 		return val
 	default:
 		panic("evaluateUnaryExpr: Unknown type")
@@ -105,7 +106,6 @@ func TestBasicMathTrees(t *testing.T) {
 	res := runStatement(program.Statements[0])
 	resPrecedence := runStatement(program.Statements[1])
 	resPrecedenceTwo := runStatement(program.Statements[2])
-
 	assertEqual(t, res.number, 2)
 	assertEqual(t, resPrecedence.number, 23)
 	assertEqual(t, resPrecedenceTwo.number, 14)
@@ -127,6 +127,7 @@ func TestPrecedenceTwo(t *testing.T) {
 	input := `
 		27-6/3+5;
 		27-6/3*5;
+		27-6/3*5/2;
 	`
 
 	l := lexer.New(input)
@@ -134,22 +135,44 @@ func TestPrecedenceTwo(t *testing.T) {
 	program := p.ParseProgram()
 	res := runStatement(program.Statements[0])
 	resTwo := runStatement(program.Statements[1])
-
+	resThree := runStatement(program.Statements[2])
+	// printExpressionStatement(program.Statements[2])
 	assertEqual(t, res.number, 30)
 	assertEqual(t, resTwo.number, 17)
+	assertEqual(t, resThree.number, 22)
 
 }
 
-/*
-func TestLetAssignment(t *testing.T) {
-	input := "let test := 1;"
+func TestNegativeNumbers(t *testing.T) {
+	input := `3+-1;`
 
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	tree := program.Statements[0]
-	fmt.Printf("Tree stringified %v\n", tree)
+	res := runStatement(program.Statements[0])
+	assertEqual(t, res.number, 2)
+}
+
+/**/
+func printExpressionStatement(stmt Statement) {
+	es := stmt.(ExpressionStatement)
+	expr := es.Expr
+	fmt.Printf("\n%v \n", expr)
+}
+
+func TestLetAssignment(t *testing.T) {
+	input := `
+		let test := 1;
+		let two := 1+2;
+	`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
 	res := runStatement(program.Statements[0])
 	assertEqual(t, res.number, 1)
 	assertEqual(t, res.ident, "test")
-}*/
+	resTwo := runStatement(program.Statements[1])
+	assertEqual(t, resTwo.ident, "two")
+	assertEqual(t, resTwo.number, 3)
+}
