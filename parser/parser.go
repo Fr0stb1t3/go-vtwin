@@ -36,6 +36,9 @@ type UnaryExpression struct {
 }
 
 // switch l := e.X.(type) {
+func (e UnaryExpression) String() string {
+	return e.Operand.Literal
+}
 func (e UnaryExpression) exprNode() {
 
 }
@@ -109,20 +112,28 @@ func (p *Parser) nextToken() {
 
 /*
 Breaks on precence parsing example
-expected:
-			+
+Actual:
+			*
 	 -    5
 27	/
 	6  3
 
-Actual
+Wanted
 
 	 -
-27   +
+27   *
 		/  5
 	6  3
 */
-func (p *Parser) parseBinaryExpr(endToken token.Type) Expression {
+
+func (p *Parser) parseUnaryExpr() Expression {
+	operand := token.NewToken(token.ADD, '+') // Fix me
+	return UnaryExpression{
+		Operator: operand,
+		Operand:  p.curToken,
+	}
+}
+func (p *Parser) parseBinaryExpr(endToken token.Type, rhs bool, prec int) Expression {
 	if endToken == token.RPAREN {
 		if p.tokenIs(token.LPAREN) {
 			p.nextToken()
@@ -131,44 +142,43 @@ func (p *Parser) parseBinaryExpr(endToken token.Type) Expression {
 	expression := BinaryExpression{}
 
 	for !p.tokenIs(endToken) {
+		if expression.completeNode() {
+			if rhs {
+				return expression
+			} else if !p.tokenIs(endToken) {
+				/*
+							If there are more tokens
+					 		Moves the old expression to the left BinaryExpression
+				*/
+				oldExpression := expression
+				expression = BinaryExpression{Left: oldExpression}
+			}
+		}
 
-		/*
-			if there is a open brace call parse expression (recursion)
-		*/
-		if p.tokenIs(token.LPAREN) {
+		switch {
+		case p.curToken.Type.IsOpertor():
+			expression.Operator = p.curToken
+		case p.tokenIs(token.LPAREN):
 			subExpression := p.parseExpression(token.RPAREN)
 			expression.addSubnode(subExpression)
-			p.nextToken()
-		}
 
-		/*
-			If there are more tokens
-			Moves the old expression to the left BinaryExpression
-		*/
-		if !p.tokenIs(endToken) &&
-			expression.completeNode() {
+		case rhs && expression.Operator.Type.IsOpertor() && p.peekPrecedence() > prec:
+			leaf := p.parseUnaryExpr()
+			expression.addSubnode(leaf)
 			oldExpression := expression
 			expression = BinaryExpression{Left: oldExpression}
-		}
-		/*
-			If the BinaryExpression has an operator next operator precedence
-		*/
-		if expression.Operator.Type.IsOpertor() &&
-			p.peekPrecedence() > expression.Operator.Type.Precedence() {
-			subExpression := p.parseExpression(endToken)
-			expression.Right = subExpression
-		}
-		if p.curToken.Type.IsOpertor() {
-			expression.Operator = p.curToken
-		} else if !p.tokenIs(endToken) {
-			operand := token.NewToken(token.ADD, '+')
-			leaf := UnaryExpression{
-				Operator: operand,
-				Operand:  p.curToken,
-			}
+		case expression.Operator.Type.IsOpertor() && p.peekPrecedence() > expression.Operator.Type.Precedence():
+			/*
+				If the BinaryExpression has an operator next operator precedence
+			*/
+			subExpression := p.parseBinaryExpr(endToken, true, expression.Operator.Type.Precedence())
+			expression.addSubnode(subExpression)
+		default:
+			leaf := p.parseUnaryExpr()
 			expression.addSubnode(leaf)
 		}
-		if !p.peekTokenIs(token.EOF) {
+
+		if !p.peekTokenIs(token.EOF) && !(rhs && expression.completeNode()) {
 			p.nextToken()
 		}
 	}
@@ -176,7 +186,8 @@ func (p *Parser) parseBinaryExpr(endToken token.Type) Expression {
 }
 
 func (p *Parser) parseExpression(endToken token.Type) Expression {
-	return p.parseBinaryExpr(endToken)
+
+	return p.parseBinaryExpr(endToken, false, 0)
 }
 
 func (p *Parser) parseLetStatement() LetStatement {
