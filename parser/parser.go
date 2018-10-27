@@ -30,6 +30,17 @@ func (eS LetStatement) getTree() Expression {
 	return eS.Expr
 }
 
+type ParenExpression struct {
+	Lparen token.Token
+	Expr   Expression
+	Rparen token.Token
+}
+
+// switch l := e.X.(type) {
+func (e ParenExpression) exprNode() {
+
+}
+
 type UnaryExpression struct {
 	Operator token.Token
 	Operand  token.Token
@@ -39,10 +50,9 @@ func (e UnaryExpression) exprNode() {
 
 }
 
-//
-// func (nd *UnaryExpression) String() string {
-// 	return nd.Operand.Literal
-// }
+func (nd UnaryExpression) String() string {
+	return nd.Operand.Literal
+}
 
 type BinaryExpression struct {
 	Left     Expression
@@ -54,6 +64,10 @@ type BinaryExpression struct {
 func (e BinaryExpression) exprNode() {
 
 }
+
+/*
+	Moves the old expression to the left BinaryExpression
+*/
 func (e *BinaryExpression) shiftNode() BinaryExpression {
 	expr := *e
 	return BinaryExpression{
@@ -78,11 +92,8 @@ func (e *BinaryExpression) addSubnode(subEx Expression) {
 		e.Right = subEx
 		return
 	}
-	panic("BinaryExpression node is full")
-}
 
-func (nd *BinaryExpression) String() string {
-	return nd.Operator.Literal
+	panic("BinaryExpression node is full")
 }
 
 type Statement interface {
@@ -129,6 +140,27 @@ func (p *Parser) parseUnaryExpr() Expression {
 		Operand:  p.curToken,
 	}
 }
+func (p *Parser) parseParenExpr() Expression {
+	var parenCounter int
+	pExpr := ParenExpression{}
+	for p.tokenIs(token.LPAREN) {
+		parenCounter++
+		pExpr.Lparen = p.curToken
+		p.nextToken()
+	}
+	pExpr.Expr = p.parseExpression(token.RPAREN)
+	for p.peekTokenIs(token.RPAREN) {
+		parenCounter--
+		p.nextToken()
+	}
+	pExpr.Rparen = p.curToken
+	parenCounter--
+	if parenCounter > 0 {
+		panic("Paren mismatch")
+	}
+
+	return pExpr
+}
 func (p *Parser) parseBinaryExpr(endToken token.Type, rhs bool, prec int) Expression {
 	expression := BinaryExpression{}
 
@@ -137,41 +169,33 @@ func (p *Parser) parseBinaryExpr(endToken token.Type, rhs bool, prec int) Expres
 			if rhs {
 				return expression
 			} else if !p.tokenIs(endToken) {
-				/*
-							If there are more tokens
-					 		Moves the old expression to the left BinaryExpression
-				*/
 				expression = expression.shiftNode()
 			}
 		}
-
 		switch {
 		case p.tokenIs(token.LPAREN):
-			p.nextToken()
-			subExpression := p.parseExpression(token.RPAREN)
-			expression.addSubnode(subExpression)
-		case expression.emptyNode():
-			leaf := p.parseUnaryExpr()
-			expression.addSubnode(leaf)
+			expr := p.parseParenExpr()
+			expression.addSubnode(expr)
+
 		case p.curToken.Type.IsOpertor() && !expression.Operator.Type.IsOpertor():
 			expression.Operator = p.curToken
+
+		case expression.emptyNode():
+			expr := p.parseUnaryExpr()
+			expression.addSubnode(expr)
+
 		case rhs && expression.Operator.Type.IsOpertor() && p.peekPrecedence() > prec:
-			leaf := p.parseUnaryExpr()
-			expression.addSubnode(leaf)
-			/*
-				oldExpression := expression
-				expression = BinaryExpression{Left: oldExpression}
-			*/
+			expr := p.parseUnaryExpr()
+			expression.addSubnode(expr)
 			expression = expression.shiftNode()
+
 		case expression.Operator.Type.IsOpertor() && p.peekPrecedence() > expression.Operator.Type.Precedence():
-			/*
-				If the BinaryExpression has an operator next operator precedence
-			*/
-			subExpression := p.parseBinaryExpr(endToken, true, expression.Operator.Type.Precedence())
-			expression.addSubnode(subExpression)
+			expr := p.parseBinaryExpr(endToken, true, expression.Operator.Type.Precedence())
+			expression.addSubnode(expr)
+
 		default:
-			leaf := p.parseUnaryExpr()
-			expression.addSubnode(leaf)
+			expr := p.parseUnaryExpr()
+			expression.addSubnode(expr)
 		}
 
 		if !p.peekTokenIs(token.EOF) && !(rhs && expression.completeNode()) {
@@ -206,7 +230,6 @@ func (p *Parser) parseLetStatement() LetStatement {
 	}
 	p.nextToken() // TODO
 	p.nextToken()
-	// operand := token.NewToken(token.ADD, '+')
 
 	assignment.Expr = p.parseExpression(token.SEMICOLON)
 	return assignment
@@ -220,9 +243,11 @@ func (p *Parser) parseStatement() Statement {
 	case token.RETURN:
 		fmt.Printf("parse as return statement %v\n", p.curToken.Literal)
 	case token.LPAREN, token.INT:
+		start := p.curToken
 		expression := p.parseExpression(token.SEMICOLON)
 		return ExpressionStatement{
-			Expr: expression,
+			Token: start,
+			Expr:  expression,
 		}
 	}
 	return nil

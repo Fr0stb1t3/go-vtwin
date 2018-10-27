@@ -14,6 +14,7 @@ func assertEqual(t *testing.T, a interface{}, b interface{}) {
 		t.Fatalf("%s != %s", a, b)
 	}
 }
+
 func add(A int, B int) int {
 	return A + B
 }
@@ -33,6 +34,10 @@ func evaluateUnaryExpr(ex Expression) int {
 	case token.INT:
 		val, _ := strconv.Atoi(uax.Operator.Literal + uax.Operand.Literal)
 		return val
+	case token.IDENT:
+		fmt.Printf("\n %v:", uax.Operand)
+		// val, _ := strconv.Atoi(uax.Operator.Literal + uax.Operand.Literal)
+		return 0
 	default:
 		panic("evaluateUnaryExpr: Unknown type")
 	}
@@ -43,7 +48,6 @@ func evaluateBinaryExpr(ex Expression) int {
 	a := evaluateExpression(be.Left)
 	b := evaluateExpression(be.Right)
 
-	// fmt.Printf("parse as immutable assignment %v\n", be)
 	switch be.Operator.Type {
 	case token.ADD:
 		return add(a, b)
@@ -59,6 +63,9 @@ func evaluateBinaryExpr(ex Expression) int {
 
 func evaluateExpression(ex Expression) int {
 	switch ex.(type) {
+	case ParenExpression:
+		pex := ex.(ParenExpression)
+		return evaluateExpression(pex.Expr)
 	case BinaryExpression:
 		return evaluateBinaryExpr(ex)
 	case UnaryExpression:
@@ -94,7 +101,6 @@ func runStatement(stmt Statement) result {
 /**/
 
 func TestBasicMathTrees(t *testing.T) {
-	// TODO fix expressionParse
 	input := `1+2+4-5;
 						1+2+4*5;
 						1+2*4+5;
@@ -111,7 +117,6 @@ func TestBasicMathTrees(t *testing.T) {
 	assertEqual(t, resPrecedenceTwo.number, 14)
 }
 
-/**/
 func TestBracesTwo(t *testing.T) {
 	input := `
 		(2+1)*(4+5);
@@ -123,9 +128,8 @@ func TestBracesTwo(t *testing.T) {
 	program := p.ParseProgram()
 	res := runStatement(program.Statements[0])
 	assertEqual(t, res.number, 27)
-	// restwo := runStatement(program.Statements[1])
-	// printExpressionStatement(program.Statements[1])
-	// assertEqual(t, restwo.number, 27)
+	restwo := runStatement(program.Statements[1])
+	assertEqual(t, restwo.number, 27)
 }
 
 func TestPrecedenceTwo(t *testing.T) {
@@ -160,13 +164,13 @@ func TestNegativeNumbers(t *testing.T) {
 
 /**/
 func printExpressionStatement(stmt Statement) {
-
 	fmt.Printf("\n%v \n", stmt)
 }
 
 func TestLetAssignment(t *testing.T) {
 	input := `let test <- 1;
 						let two <- 1+2;
+						let three <- test+two;
 	`
 
 	l := lexer.New(input)
@@ -178,4 +182,9 @@ func TestLetAssignment(t *testing.T) {
 	resTwo := runStatement(program.Statements[1])
 	assertEqual(t, resTwo.ident, "two")
 	assertEqual(t, resTwo.number, 3)
+
+	resThree := runStatement(program.Statements[2])
+	printExpressionStatement(program.Statements[2])
+	assertEqual(t, resThree.ident, "three")
+	assertEqual(t, resThree.number, 4)
 }

@@ -111,10 +111,10 @@ var tokens = [...]string{
 	AND_NOT: "&^",
 
 	ASSIGN:     "<-",
-	ADD_ASSIGN: "+=",
-	SUB_ASSIGN: "-=",
-	MUL_ASSIGN: "*=",
-	DIV_ASSIGN: "/=",
+	ADD_ASSIGN: "+<",
+	SUB_ASSIGN: "-<",
+	MUL_ASSIGN: "*<",
+	DIV_ASSIGN: "/<",
 	LSS:        "<",
 	GTR:        ">",
 
