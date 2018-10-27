@@ -28,25 +28,27 @@ func divide(A int, B int) int {
 	return A / B
 }
 
-func evaluateUnaryExpr(ex Expression) int {
+func evaluateUnaryExpr(ex Expression, scope Scope) int {
 	uax := ex.(UnaryExpression)
 	switch uax.Operand.Type {
 	case token.INT:
 		val, _ := strconv.Atoi(uax.Operator.Literal + uax.Operand.Literal)
 		return val
 	case token.IDENT:
-		fmt.Printf("\n %v:", uax.Operand)
-		// val, _ := strconv.Atoi(uax.Operator.Literal + uax.Operand.Literal)
-		return 0
+		val := scope.Lookup(uax.Operand.Literal)
+		if val == nil {
+			panic("Identifier not found")
+		}
+		return evaluateExpression(val.Expr, scope)
 	default:
 		panic("evaluateUnaryExpr: Unknown type")
 	}
 }
 
-func evaluateBinaryExpr(ex Expression) int {
+func evaluateBinaryExpr(ex Expression, scope Scope) int {
 	be := ex.(BinaryExpression)
-	a := evaluateExpression(be.Left)
-	b := evaluateExpression(be.Right)
+	a := evaluateExpression(be.Left, scope)
+	b := evaluateExpression(be.Right, scope)
 
 	switch be.Operator.Type {
 	case token.ADD:
@@ -61,15 +63,15 @@ func evaluateBinaryExpr(ex Expression) int {
 	return 0
 }
 
-func evaluateExpression(ex Expression) int {
+func evaluateExpression(ex Expression, scope Scope) int {
 	switch ex.(type) {
 	case ParenExpression:
 		pex := ex.(ParenExpression)
-		return evaluateExpression(pex.Expr)
+		return evaluateExpression(pex.Expr, scope)
 	case BinaryExpression:
-		return evaluateBinaryExpr(ex)
+		return evaluateBinaryExpr(ex, scope)
 	case UnaryExpression:
-		return evaluateUnaryExpr(ex)
+		return evaluateUnaryExpr(ex, scope)
 	}
 	return 0
 }
@@ -79,17 +81,17 @@ type result struct {
 	ident  string
 }
 
-func runStatement(stmt Statement) result {
+func runStatement(stmt Statement, scope Scope) result {
 	switch stmt.(type) {
 	case ExpressionStatement:
 		es := stmt.(ExpressionStatement)
-		val := evaluateExpression(es.Expr)
+		val := evaluateExpression(es.Expr, scope)
 		return result{
 			number: val,
 		}
 	case LetStatement:
 		ls := stmt.(LetStatement)
-		val := evaluateExpression(ls.Expr)
+		val := evaluateExpression(ls.Expr, scope)
 		return result{
 			ident:  ls.Name.Value,
 			number: val,
@@ -97,8 +99,6 @@ func runStatement(stmt Statement) result {
 	}
 	return result{}
 }
-
-/**/
 
 func TestBasicMathTrees(t *testing.T) {
 	input := `1+2+4-5;
@@ -109,9 +109,9 @@ func TestBasicMathTrees(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	res := runStatement(program.Statements[0])
-	resPrecedence := runStatement(program.Statements[1])
-	resPrecedenceTwo := runStatement(program.Statements[2])
+	res := runStatement(program.Statements[0], p.topScope)
+	resPrecedence := runStatement(program.Statements[1], p.topScope)
+	resPrecedenceTwo := runStatement(program.Statements[2], p.topScope)
 	assertEqual(t, res.number, 2)
 	assertEqual(t, resPrecedence.number, 23)
 	assertEqual(t, resPrecedenceTwo.number, 14)
@@ -126,9 +126,9 @@ func TestBracesTwo(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	res := runStatement(program.Statements[0])
+	res := runStatement(program.Statements[0], p.topScope)
 	assertEqual(t, res.number, 27)
-	restwo := runStatement(program.Statements[1])
+	restwo := runStatement(program.Statements[1], p.topScope)
 	assertEqual(t, restwo.number, 27)
 }
 
@@ -142,10 +142,10 @@ func TestPrecedenceTwo(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	res := runStatement(program.Statements[0])
-	resTwo := runStatement(program.Statements[1])
-	resThree := runStatement(program.Statements[2])
-	// printExpressionStatement(program.Statements[2])
+	res := runStatement(program.Statements[0], p.topScope)
+	resTwo := runStatement(program.Statements[1], p.topScope)
+	resThree := runStatement(program.Statements[2], p.topScope)
+	// printExpressionStatement(program.Statements[2], p.topScope)
 	assertEqual(t, res.number, 30)
 	assertEqual(t, resTwo.number, 17)
 	assertEqual(t, resThree.number, 22)
@@ -158,11 +158,10 @@ func TestNegativeNumbers(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	res := runStatement(program.Statements[0])
+	res := runStatement(program.Statements[0], p.topScope)
 	assertEqual(t, res.number, 2)
 }
 
-/**/
 func printExpressionStatement(stmt Statement) {
 	fmt.Printf("\n%v \n", stmt)
 }
@@ -170,21 +169,21 @@ func printExpressionStatement(stmt Statement) {
 func TestLetAssignment(t *testing.T) {
 	input := `let test <- 1;
 						let two <- 1+2;
-						let three <- test+two;
+						let three <- test+two+1;
 	`
 
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	res := runStatement(program.Statements[0])
+	res := runStatement(program.Statements[0], p.topScope)
 	assertEqual(t, res.number, 1)
 	assertEqual(t, res.ident, "test")
-	resTwo := runStatement(program.Statements[1])
+
+	resTwo := runStatement(program.Statements[1], p.topScope)
 	assertEqual(t, resTwo.ident, "two")
 	assertEqual(t, resTwo.number, 3)
 
-	resThree := runStatement(program.Statements[2])
-	printExpressionStatement(program.Statements[2])
+	resThree := runStatement(program.Statements[2], p.topScope)
 	assertEqual(t, resThree.ident, "three")
-	assertEqual(t, resThree.number, 4)
+	assertEqual(t, resThree.number, 5)
 }

@@ -7,106 +7,10 @@ import (
 	"github.com/Fr0stb1t3/go-vtwin/token"
 )
 
-type Expression interface {
-	exprNode()
-}
-
-type Identifier struct {
-	Token token.Token // the token.IDENT token
-	Value string
-}
-
-func (i Identifier) String() string {
-	return i.Value
-}
-
-type LetStatement struct {
-	Token token.Token
-	Name  *Identifier
-	Expr  Expression
-}
-
-func (eS LetStatement) getTree() Expression {
-	return eS.Expr
-}
-
-type ParenExpression struct {
-	Lparen token.Token
-	Expr   Expression
-	Rparen token.Token
-}
-
-// switch l := e.X.(type) {
-func (e ParenExpression) exprNode() {
-
-}
-
-type UnaryExpression struct {
-	Operator token.Token
-	Operand  token.Token
-}
-
-func (e UnaryExpression) exprNode() {
-
-}
-
-func (nd UnaryExpression) String() string {
-	return nd.Operand.Literal
-}
-
-type BinaryExpression struct {
-	Left     Expression
-	Operator token.Token
-	Right    Expression
-}
-
-// switch l := e.X.(type) {
-func (e BinaryExpression) exprNode() {
-
-}
-
-/*
-	Moves the old expression to the left BinaryExpression
-*/
-func (e *BinaryExpression) shiftNode() BinaryExpression {
-	expr := *e
-	return BinaryExpression{
-		Left: expr,
-	}
-}
-func (e *BinaryExpression) emptyNode() bool {
-	return e.Left == nil &&
-		e.Operator == token.Token{} &&
-		e.Right == nil
-}
-func (e *BinaryExpression) completeNode() bool {
-	return e.Left != nil &&
-		e.Operator != token.Token{} &&
-		e.Right != nil
-}
-func (e *BinaryExpression) addSubnode(subEx Expression) {
-	if e.Left == nil {
-		e.Left = subEx
-		return
-	} else if e.Right == nil {
-		e.Right = subEx
-		return
-	}
-
-	panic("BinaryExpression node is full")
-}
-
-type Statement interface {
-}
-type ExpressionStatement struct {
-	Token token.Token // the first token of the expression
-	Expr  Expression
-}
-
 type Parser struct {
-	l      *lexer.Lexer
-	errors []string
-
+	l         *lexer.Lexer
+	errors    []string
+	topScope  Scope
 	curToken  token.Token
 	peekToken token.Token
 }
@@ -116,6 +20,8 @@ func New(l *lexer.Lexer) *Parser {
 		l:      l,
 		errors: []string{},
 	}
+
+	p.topScope = Scope{Objects: make(map[string]*LetStatement)}
 	// Read two tokens, so curToken and peekToken are both set
 	p.nextToken()
 	p.nextToken()
@@ -239,7 +145,9 @@ func (p *Parser) parseStatement() Statement {
 	case token.CONST:
 		fmt.Printf("parse as immutable assignment %v\n", p.curToken.Literal)
 	case token.LET:
-		return p.parseLetStatement()
+		stmt := p.parseLetStatement()
+		p.topScope.Objects[stmt.Name.Value] = &stmt
+		return stmt
 	case token.RETURN:
 		fmt.Printf("parse as return statement %v\n", p.curToken.Literal)
 	case token.LPAREN, token.INT:
@@ -253,10 +161,6 @@ func (p *Parser) parseStatement() Statement {
 	return nil
 }
 
-type Program struct {
-	Statements []Statement
-}
-
 func (p *Parser) ParseProgram() *Program {
 	program := &Program{}
 	for p.curToken.Type != token.EOF {
@@ -266,7 +170,6 @@ func (p *Parser) ParseProgram() *Program {
 		}
 		p.nextToken()
 	}
-	// fmt.Printf("parsing %v\n", program)
 	return program
 }
 func (p *Parser) peekPrecedence() int {
