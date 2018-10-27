@@ -54,6 +54,12 @@ type BinaryExpression struct {
 func (e BinaryExpression) exprNode() {
 
 }
+func (e *BinaryExpression) shiftNode() BinaryExpression {
+	expr := *e
+	return BinaryExpression{
+		Left: expr,
+	}
+}
 func (e *BinaryExpression) emptyNode() bool {
 	return e.Left == nil &&
 		e.Operator == token.Token{} &&
@@ -135,8 +141,7 @@ func (p *Parser) parseBinaryExpr(endToken token.Type, rhs bool, prec int) Expres
 							If there are more tokens
 					 		Moves the old expression to the left BinaryExpression
 				*/
-				oldExpression := expression
-				expression = BinaryExpression{Left: oldExpression}
+				expression = expression.shiftNode()
 			}
 		}
 
@@ -153,8 +158,11 @@ func (p *Parser) parseBinaryExpr(endToken token.Type, rhs bool, prec int) Expres
 		case rhs && expression.Operator.Type.IsOpertor() && p.peekPrecedence() > prec:
 			leaf := p.parseUnaryExpr()
 			expression.addSubnode(leaf)
-			oldExpression := expression
-			expression = BinaryExpression{Left: oldExpression}
+			/*
+				oldExpression := expression
+				expression = BinaryExpression{Left: oldExpression}
+			*/
+			expression = expression.shiftNode()
 		case expression.Operator.Type.IsOpertor() && p.peekPrecedence() > expression.Operator.Type.Precedence():
 			/*
 				If the BinaryExpression has an operator next operator precedence
@@ -211,22 +219,11 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseLetStatement()
 	case token.RETURN:
 		fmt.Printf("parse as return statement %v\n", p.curToken.Literal)
-	case token.LPAREN:
+	case token.LPAREN, token.INT:
 		expression := p.parseExpression(token.SEMICOLON)
 		return ExpressionStatement{
 			Expr: expression,
 		}
-	case token.INT:
-		if p.peekToken.Type.IsOpertor() {
-			expression := p.parseExpression(token.SEMICOLON)
-			return ExpressionStatement{
-				Expr: expression,
-			}
-			// return p.parseExpression(token.SEMICOLON)
-		}
-	default:
-		// log.Info("Default", p.curToken)
-		// fmt.Printf("parse as expression statement %v \n", p.curToken.Literal)
 	}
 	return nil
 }

@@ -113,14 +113,19 @@ func TestBasicMathTrees(t *testing.T) {
 
 /**/
 func TestBracesTwo(t *testing.T) {
-	input := `(2+1)*(4+5);`
+	input := `
+		(2+1)*(4+5);
+		((2+1))*(4+5);
+	`
 
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
 	res := runStatement(program.Statements[0])
-
 	assertEqual(t, res.number, 27)
+	// restwo := runStatement(program.Statements[1])
+	// printExpressionStatement(program.Statements[1])
+	// assertEqual(t, restwo.number, 27)
 }
 
 func TestPrecedenceTwo(t *testing.T) {
@@ -155,15 +160,13 @@ func TestNegativeNumbers(t *testing.T) {
 
 /**/
 func printExpressionStatement(stmt Statement) {
-	es := stmt.(ExpressionStatement)
-	expr := es.Expr
-	fmt.Printf("\n%v \n", expr)
+
+	fmt.Printf("\n%v \n", stmt)
 }
 
 func TestLetAssignment(t *testing.T) {
-	input := `
-		let test := 1;
-		let two := 1+2;
+	input := `let test <- 1;
+						let two <- 1+2;
 	`
 
 	l := lexer.New(input)

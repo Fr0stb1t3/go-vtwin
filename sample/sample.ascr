@@ -12,7 +12,7 @@ while(a<b) {
 
 }
 
-const obj := {
+const obj <- {
   publicimmutable: "can see me", // default
   private Field: "can see Me via public", // default, accessible to func
   *MutablePublicField,

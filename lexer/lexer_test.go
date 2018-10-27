@@ -8,13 +8,13 @@ import (
 
 func TestNextToken(t *testing.T) {
 	input := `
-				let five := 5;
-				const ten := 10;
-				const add := func(x, y) {
+				let five <- 5;
+				const ten <- 10;
+				const add <- func(x, y) {
 					return x + y;
 				};
 
-				const result := add(five, ten);
+				const result <- add(five, ten);
 				!-/*2;
 				5 < 6 > 4;
 				if (5 < 10) {
@@ -26,7 +26,7 @@ func TestNextToken(t *testing.T) {
 				10 != 9;
 				"Hello"
 				"Hello world!"
-				const arr := [1, 2, 3];
+				const arr <- [1, 2, 3];
 			`
 	tests := []struct {
 		expectedType    token.Type
@@ -34,18 +34,18 @@ func TestNextToken(t *testing.T) {
 	}{
 		{token.LET, "let"},
 		{token.IDENT, "five"},
-		{token.ASSIGN, ":="},
+		{token.ASSIGN, "<-"},
 		{token.INT, "5"},
 		{token.SEMICOLON, ";"},
 		{token.CONST, "const"},
 		{token.IDENT, "ten"},
-		{token.ASSIGN, ":="},
+		{token.ASSIGN, "<-"},
 		{token.INT, "10"},
 		{token.SEMICOLON, ";"},
 
 		{token.CONST, "const"},
 		{token.IDENT, "add"},
-		{token.ASSIGN, ":="},
+		{token.ASSIGN, "<-"},
 		{token.FUNCTION, "func"},
 		{token.LPAREN, "("},
 		{token.IDENT, "x"},
@@ -63,7 +63,7 @@ func TestNextToken(t *testing.T) {
 
 		{token.CONST, "const"},
 		{token.IDENT, "result"},
-		{token.ASSIGN, ":="},
+		{token.ASSIGN, "<-"},
 		{token.IDENT, "add"},
 		{token.LPAREN, "("},
 		{token.IDENT, "five"},
@@ -119,7 +119,7 @@ func TestNextToken(t *testing.T) {
 
 		{token.CONST, "const"},
 		{token.IDENT, "arr"},
-		{token.ASSIGN, ":="},
+		{token.ASSIGN, "<-"},
 		{token.LBRACK, "["},
 		{token.INT, "1"},
 		{token.COMMA, ","},

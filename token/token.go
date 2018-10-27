@@ -40,7 +40,7 @@ const (
 	SHR     // >>
 	AND_NOT // &^
 
-	ASSIGN     // :=
+	ASSIGN     // <-
 	ADD_ASSIGN // +=
 	SUB_ASSIGN // -=
 	MUL_ASSIGN // *=
@@ -110,7 +110,7 @@ var tokens = [...]string{
 	SHR:     ">>",
 	AND_NOT: "&^",
 
-	ASSIGN:     ":=",
+	ASSIGN:     "<-",
 	ADD_ASSIGN: "+=",
 	SUB_ASSIGN: "-=",
 	MUL_ASSIGN: "*=",
