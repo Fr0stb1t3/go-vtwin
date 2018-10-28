@@ -1,6 +1,10 @@
 package parser
 
-import "github.com/Fr0stb1t3/go-vtwin/token"
+import (
+	"fmt"
+
+	"github.com/Fr0stb1t3/go-vtwin/token"
+)
 
 type Program struct {
 	Statements []Statement
@@ -78,7 +82,7 @@ func (e *BinaryExpression) addSubnode(subEx Expression) {
 		e.Right = subEx
 		return
 	}
-
+	fmt.Printf("\n %v", e)
 	panic("BinaryExpression node is full")
 }
 

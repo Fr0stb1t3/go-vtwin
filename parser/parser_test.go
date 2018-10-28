@@ -33,13 +33,12 @@ func GenerateRandomExpression(operationCount int) string {
 	count := 1
 	expression := ""
 	for count < operationCount {
-		A := rand.Intn(100) + 1
-		B := rand.Intn(100) + 1
-		parens := (A % 41) == 0
+		A := rand.Intn(10) + 1
+		B := rand.Intn(10) + 1
+		parens := (A % 3) == 0
 		lparen := ""
 		rparen := ""
 		if parens == true {
-			fmt.Printf("Braces")
 			lparen = "("
 			rparen = ")"
 		}
@@ -54,7 +53,7 @@ func GenerateRandomExpression(operationCount int) string {
 }
 func assertEqual(t *testing.T, a interface{}, b interface{}, message string) {
 	if a != b {
-		t.Fatalf("%s != %s message:"+message, a, b)
+		t.Fatalf("%s != %s input:"+message, a, b)
 	}
 }
 
@@ -164,8 +163,10 @@ func TestBracesTwo(t *testing.T) {
 	input := `
 		(2+1)*(4+5);
 		((2+1))*(4+5);
+		1+6+(6*1)*5*5*4-6;
+		8+4+2-4-(3*5)*(3-7);
 	`
-
+	//%!s(int=-60) != %!s(int=70) input:8+4+2-4-(3*5)*(3-7)
 	l := lexer.New(input)
 	p := parser.New(l)
 	program := p.ParseProgram()
@@ -173,6 +174,13 @@ func TestBracesTwo(t *testing.T) {
 	assertEqual(t, res.number, 27, "")
 	restwo := runStatement(program.Statements[1], p.TopScope)
 	assertEqual(t, restwo.number, 27, "")
+	restwo = runStatement(program.Statements[2], p.TopScope)
+	// printExpressionStatement(program.Statements[2])
+	assertEqual(t, restwo.number, 601, "1+6+(6*1)*5*5*4-7")
+
+	restwo = runStatement(program.Statements[3], p.TopScope)
+	printExpressionStatement(program.Statements[3])
+	assertEqual(t, restwo.number, 70, "8+4+2-4-(3*5)*(3-7)")
 }
 
 func TestPrecedenceTwo(t *testing.T) {
@@ -222,6 +230,10 @@ func randomExpressionTest(t *testing.T) {
 /*
 Evaluated -16484
 22*29*73-6-(82*70)*11+88
+*/
+/*
+69466
+66-59-17+85+(82*9)*94+19
 */
 
 func TestRandomLoopSet(t *testing.T) {

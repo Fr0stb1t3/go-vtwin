@@ -80,25 +80,30 @@ func (p *Parser) parseParenExpr() Expression {
 */
 func (p *Parser) parseBinaryExpr(endToken token.Type, rhs bool, prec int) Expression {
 	expression := BinaryExpression{}
-
+	oldExpr := BinaryExpression{}
 	for !p.tokenIs(endToken) {
 		if expression.completeNode() {
-			if rhs {
+			// Hack bracket precedence
+			if p.curToken.Type.Precedence() > expression.Operator.Type.Precedence() {
+				oldExpr.Left = expression.Left
+				oldExpr.Operator = expression.Operator
+				expression.Operator = token.Token{}
+				expression.Left = nil
+			} else if oldExpr.Left != nil && p.curToken.Type.Precedence() <= oldExpr.Operator.Type.Precedence() {
+				oldExpr.Right = expression
+				expression = oldExpr
+				oldExpr = BinaryExpression{}
+				expression = expression.shiftNode()
+			} else if rhs {
 				return expression
 			} else if !p.tokenIs(endToken) {
 				expression = expression.shiftNode()
 			}
+
 		}
 		switch {
 		case p.tokenIs(token.LPAREN):
 			expr := p.parseParenExpr()
-			expression.addSubnode(expr)
-
-		case p.curToken.Type.IsOpertor() && !expression.Operator.Type.IsOpertor():
-			expression.Operator = p.curToken
-
-		case expression.emptyNode():
-			expr := p.parseUnaryExpr()
 			expression.addSubnode(expr)
 
 		case rhs && expression.Operator.Type.IsOpertor() && p.peekPrecedence() > prec:
@@ -110,7 +115,10 @@ func (p *Parser) parseBinaryExpr(endToken token.Type, rhs bool, prec int) Expres
 			expr := p.parseBinaryExpr(endToken, true, expression.Operator.Type.Precedence())
 			expression.addSubnode(expr)
 
-		default:
+		case p.curToken.Type.IsOpertor() && !expression.Operator.Type.IsOpertor():
+			expression.Operator = p.curToken
+
+		case expression.Left == nil, expression.Right == nil:
 			expr := p.parseUnaryExpr()
 			expression.addSubnode(expr)
 		}
@@ -118,6 +126,11 @@ func (p *Parser) parseBinaryExpr(endToken token.Type, rhs bool, prec int) Expres
 		if !p.peekTokenIs(token.EOF) && !(rhs && expression.completeNode()) {
 			p.nextToken()
 		}
+	}
+	// Hack two
+	if oldExpr.Left != nil {
+		oldExpr.Right = expression
+		expression = oldExpr
 	}
 	return expression
 }
