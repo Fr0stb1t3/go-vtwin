@@ -10,7 +10,7 @@ import (
 type Parser struct {
 	l         *lexer.Lexer
 	errors    []string
-	topScope  Scope
+	TopScope  Scope
 	curToken  token.Token
 	peekToken token.Token
 }
@@ -21,7 +21,7 @@ func New(l *lexer.Lexer) *Parser {
 		errors: []string{},
 	}
 
-	p.topScope = Scope{Objects: make(map[string]*LetStatement)}
+	p.TopScope = Scope{Objects: make(map[string]*LetStatement)}
 	// Read two tokens, so curToken and peekToken are both set
 	p.nextToken()
 	p.nextToken()
@@ -67,6 +67,17 @@ func (p *Parser) parseParenExpr() Expression {
 
 	return pExpr
 }
+
+/*
+ parseBinaryExpr starts constructing the AOL tree from the bottom left.
+ Create Expression
+	While there are tokens to be read
+		Set the operator to the operator Value
+		Set Identifiers or Ints to the branches of the Expression
+		When the node is full:
+			If there are more tokens left shift the previous expresion as a left node and continue
+			else return the expression
+*/
 func (p *Parser) parseBinaryExpr(endToken token.Type, rhs bool, prec int) Expression {
 	expression := BinaryExpression{}
 
@@ -146,7 +157,7 @@ func (p *Parser) parseStatement() Statement {
 		fmt.Printf("parse as immutable assignment %v\n", p.curToken.Literal)
 	case token.LET:
 		stmt := p.parseLetStatement()
-		p.topScope.Objects[stmt.Name.Value] = &stmt
+		p.TopScope.Objects[stmt.Name.Value] = &stmt
 		return stmt
 	case token.RETURN:
 		fmt.Printf("parse as return statement %v\n", p.curToken.Literal)

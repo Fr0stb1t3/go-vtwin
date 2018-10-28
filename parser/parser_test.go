@@ -1,14 +1,47 @@
-package parser
+package parser_test
 
 import (
 	"fmt"
+	"time"
+
+	"math/rand"
 	"strconv"
 	"testing"
 
 	"github.com/Fr0stb1t3/go-vtwin/lexer"
+	"github.com/Fr0stb1t3/go-vtwin/parser"
 	"github.com/Fr0stb1t3/go-vtwin/token"
+	"github.com/Knetic/govaluate"
 )
 
+func RandomOperator() string {
+	ran := rand.Intn(3)
+	switch ran {
+	case 0:
+		return "+"
+	case 1:
+		return "-"
+	case 2:
+		return "*"
+	case 3:
+		return "/"
+	}
+	return "+"
+}
+func GenerateRandomExpression(operationCount int) string {
+	rand.Seed(time.Now().UnixNano())
+	count := 1
+	expression := ""
+	for count < operationCount {
+		A := rand.Intn(10) + 1
+		B := rand.Intn(10) + 1
+		Op := RandomOperator()
+		expression = expression + strconv.Itoa(A) + Op + strconv.Itoa(B) + Op
+		count += count
+	}
+	expression = expression[:len(expression)-1] // Remove last operation
+	return expression
+}
 func assertEqual(t *testing.T, a interface{}, b interface{}) {
 	if a != b {
 		t.Fatalf("%s != %s", a, b)
@@ -28,8 +61,8 @@ func divide(A int, B int) int {
 	return A / B
 }
 
-func evaluateUnaryExpr(ex Expression, scope Scope) int {
-	uax := ex.(UnaryExpression)
+func evaluateUnaryExpr(ex parser.Expression, scope parser.Scope) int {
+	uax := ex.(parser.UnaryExpression)
 	switch uax.Operand.Type {
 	case token.INT:
 		val, _ := strconv.Atoi(uax.Operator.Literal + uax.Operand.Literal)
@@ -45,8 +78,8 @@ func evaluateUnaryExpr(ex Expression, scope Scope) int {
 	}
 }
 
-func evaluateBinaryExpr(ex Expression, scope Scope) int {
-	be := ex.(BinaryExpression)
+func evaluateBinaryExpr(ex parser.Expression, scope parser.Scope) int {
+	be := ex.(parser.BinaryExpression)
 	a := evaluateExpression(be.Left, scope)
 	b := evaluateExpression(be.Right, scope)
 
@@ -63,14 +96,14 @@ func evaluateBinaryExpr(ex Expression, scope Scope) int {
 	return 0
 }
 
-func evaluateExpression(ex Expression, scope Scope) int {
+func evaluateExpression(ex parser.Expression, scope parser.Scope) int {
 	switch ex.(type) {
-	case ParenExpression:
-		pex := ex.(ParenExpression)
+	case parser.ParenExpression:
+		pex := ex.(parser.ParenExpression)
 		return evaluateExpression(pex.Expr, scope)
-	case BinaryExpression:
+	case parser.BinaryExpression:
 		return evaluateBinaryExpr(ex, scope)
-	case UnaryExpression:
+	case parser.UnaryExpression:
 		return evaluateUnaryExpr(ex, scope)
 	}
 	return 0
@@ -81,16 +114,16 @@ type result struct {
 	ident  string
 }
 
-func runStatement(stmt Statement, scope Scope) result {
+func runStatement(stmt parser.Statement, scope parser.Scope) result {
 	switch stmt.(type) {
-	case ExpressionStatement:
-		es := stmt.(ExpressionStatement)
+	case parser.ExpressionStatement:
+		es := stmt.(parser.ExpressionStatement)
 		val := evaluateExpression(es.Expr, scope)
 		return result{
 			number: val,
 		}
-	case LetStatement:
-		ls := stmt.(LetStatement)
+	case parser.LetStatement:
+		ls := stmt.(parser.LetStatement)
 		val := evaluateExpression(ls.Expr, scope)
 		return result{
 			ident:  ls.Name.Value,
@@ -107,11 +140,11 @@ func TestBasicMathTrees(t *testing.T) {
 	`
 
 	l := lexer.New(input)
-	p := New(l)
+	p := parser.New(l)
 	program := p.ParseProgram()
-	res := runStatement(program.Statements[0], p.topScope)
-	resPrecedence := runStatement(program.Statements[1], p.topScope)
-	resPrecedenceTwo := runStatement(program.Statements[2], p.topScope)
+	res := runStatement(program.Statements[0], p.TopScope)
+	resPrecedence := runStatement(program.Statements[1], p.TopScope)
+	resPrecedenceTwo := runStatement(program.Statements[2], p.TopScope)
 	assertEqual(t, res.number, 2)
 	assertEqual(t, resPrecedence.number, 23)
 	assertEqual(t, resPrecedenceTwo.number, 14)
@@ -124,11 +157,11 @@ func TestBracesTwo(t *testing.T) {
 	`
 
 	l := lexer.New(input)
-	p := New(l)
+	p := parser.New(l)
 	program := p.ParseProgram()
-	res := runStatement(program.Statements[0], p.topScope)
+	res := runStatement(program.Statements[0], p.TopScope)
 	assertEqual(t, res.number, 27)
-	restwo := runStatement(program.Statements[1], p.topScope)
+	restwo := runStatement(program.Statements[1], p.TopScope)
 	assertEqual(t, restwo.number, 27)
 }
 
@@ -140,29 +173,44 @@ func TestPrecedenceTwo(t *testing.T) {
 	`
 
 	l := lexer.New(input)
-	p := New(l)
+	p := parser.New(l)
 	program := p.ParseProgram()
-	res := runStatement(program.Statements[0], p.topScope)
-	resTwo := runStatement(program.Statements[1], p.topScope)
-	resThree := runStatement(program.Statements[2], p.topScope)
-	// printExpressionStatement(program.Statements[2], p.topScope)
+	res := runStatement(program.Statements[0], p.TopScope)
+	resTwo := runStatement(program.Statements[1], p.TopScope)
+	resThree := runStatement(program.Statements[2], p.TopScope)
 	assertEqual(t, res.number, 30)
 	assertEqual(t, resTwo.number, 17)
 	assertEqual(t, resThree.number, 22)
-
 }
 
 func TestNegativeNumbers(t *testing.T) {
 	input := `3+-1;`
 
 	l := lexer.New(input)
-	p := New(l)
+	p := parser.New(l)
 	program := p.ParseProgram()
-	res := runStatement(program.Statements[0], p.topScope)
+	res := runStatement(program.Statements[0], p.TopScope)
 	assertEqual(t, res.number, 2)
 }
 
-func printExpressionStatement(stmt Statement) {
+func TestRandomExpressions(t *testing.T) {
+	input := GenerateRandomExpression(5)
+	expression, _ := govaluate.NewEvaluableExpression(input)
+
+	resultAny, _ := expression.Evaluate(nil)
+	resultFloat := resultAny.(float64)
+	result := int(resultFloat)
+	fmt.Printf("\n%v", input)
+	fmt.Printf("\n%v", result)
+	l := lexer.New(input + ";")
+	p := parser.New(l)
+	program := p.ParseProgram()
+	res := runStatement(program.Statements[0], p.TopScope)
+	assertEqual(t, res.number, result)
+	// fmt.Printf("\n%v", tr)
+}
+
+func printExpressionStatement(stmt parser.Statement) {
 	fmt.Printf("\n%v \n", stmt)
 }
 
@@ -173,17 +221,17 @@ func TestLetAssignment(t *testing.T) {
 	`
 
 	l := lexer.New(input)
-	p := New(l)
+	p := parser.New(l)
 	program := p.ParseProgram()
-	res := runStatement(program.Statements[0], p.topScope)
+	res := runStatement(program.Statements[0], p.TopScope)
 	assertEqual(t, res.number, 1)
 	assertEqual(t, res.ident, "test")
 
-	resTwo := runStatement(program.Statements[1], p.topScope)
+	resTwo := runStatement(program.Statements[1], p.TopScope)
 	assertEqual(t, resTwo.ident, "two")
 	assertEqual(t, resTwo.number, 3)
 
-	resThree := runStatement(program.Statements[2], p.topScope)
+	resThree := runStatement(program.Statements[2], p.TopScope)
 	assertEqual(t, resThree.ident, "three")
 	assertEqual(t, resThree.number, 5)
 }

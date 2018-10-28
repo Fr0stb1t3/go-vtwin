@@ -8,10 +8,6 @@ for (let i<-0; i++; i<5) {
   printn("Hello ", i)
 }
 
-while(a<b) {
-
-}
-
 const obj <- {
   publicimmutable: "can see me", // default
   private Field: "can see Me via public", // default, accessible to func
@@ -22,17 +18,17 @@ const obj <- {
   }
 }
 
-
-
 // Comment
 /*
   MultilineComment
 */
+const fn <- func() {
 
-func fn := () -> print('test')
-boolean b := true,
-number n := 2,
-string s := "str",
-obj v := {key:"Val"},
-dynamic d :=
-dec dc := 10.20
+}
+func fn() => print('test')
+boolean b <- true,
+number n <- 2,
+string s <- "str",
+obj v <- {key:"Val"},
+dynamic d <-
+dec dc <- 10.20

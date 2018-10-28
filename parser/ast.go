@@ -24,10 +24,6 @@ type LetStatement struct {
 	Expr  Expression
 }
 
-func (eS LetStatement) getTree() Expression {
-	return eS.Expr
-}
-
 type ParenExpression struct {
 	Lparen token.Token
 	Expr   Expression
