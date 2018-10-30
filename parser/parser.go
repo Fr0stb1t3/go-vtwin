@@ -78,24 +78,22 @@ func (p *Parser) parseParenExpr() Expression {
 			If there are more tokens left shift the previous expresion as a left node and continue
 			else return the expression
 */
-func (p *Parser) parseBinaryExpr(endToken token.Type, rhs bool, prec int) Expression {
+func (p *Parser) parseBinaryExpr(endToken token.Type) Expression {
 	expression := BinaryExpression{}
-	oldExpr := BinaryExpression{}
+	lowPrecedenceExpr := BinaryExpression{}
 	for !p.tokenIs(endToken) {
 		if expression.completeNode() {
-			// Hack bracket precedence
 			if p.curToken.Type.Precedence() > expression.Operator.Type.Precedence() {
-				oldExpr.Left = expression.Left
-				oldExpr.Operator = expression.Operator
+				lowPrecedenceExpr.Left = expression.Left
+				lowPrecedenceExpr.Operator = expression.Operator
 				expression.Operator = token.Token{}
-				expression.Left = nil
-			} else if oldExpr.Left != nil && p.curToken.Type.Precedence() <= oldExpr.Operator.Type.Precedence() {
-				oldExpr.Right = expression
-				expression = oldExpr
-				oldExpr = BinaryExpression{}
+				expression.Left = expression.Right
+				expression.Right = nil
+			} else if lowPrecedenceExpr.Left != nil && p.curToken.Type.Precedence() <= lowPrecedenceExpr.Operator.Type.Precedence() {
+				lowPrecedenceExpr.Right = expression
+				expression = lowPrecedenceExpr
+				lowPrecedenceExpr = BinaryExpression{}
 				expression = expression.shiftNode()
-			} else if rhs {
-				return expression
 			} else if !p.tokenIs(endToken) {
 				expression = expression.shiftNode()
 			}
@@ -106,15 +104,6 @@ func (p *Parser) parseBinaryExpr(endToken token.Type, rhs bool, prec int) Expres
 			expr := p.parseParenExpr()
 			expression.addSubnode(expr)
 
-		case rhs && expression.Operator.Type.IsOpertor() && p.peekPrecedence() > prec:
-			expr := p.parseUnaryExpr()
-			expression.addSubnode(expr)
-			expression = expression.shiftNode()
-
-		case expression.Operator.Type.IsOpertor() && p.peekPrecedence() > expression.Operator.Type.Precedence():
-			expr := p.parseBinaryExpr(endToken, true, expression.Operator.Type.Precedence())
-			expression.addSubnode(expr)
-
 		case p.curToken.Type.IsOpertor() && !expression.Operator.Type.IsOpertor():
 			expression.Operator = p.curToken
 
@@ -123,14 +112,14 @@ func (p *Parser) parseBinaryExpr(endToken token.Type, rhs bool, prec int) Expres
 			expression.addSubnode(expr)
 		}
 
-		if !p.peekTokenIs(token.EOF) && !(rhs && expression.completeNode()) {
+		if !p.peekTokenIs(token.EOF) {
 			p.nextToken()
 		}
 	}
-	// Hack two
-	if oldExpr.Left != nil {
-		oldExpr.Right = expression
-		expression = oldExpr
+	// Resolve any dangling expressions
+	if lowPrecedenceExpr.Left != nil {
+		lowPrecedenceExpr.Right = expression
+		expression = lowPrecedenceExpr
 	}
 	return expression
 }
@@ -138,7 +127,7 @@ func (p *Parser) parseBinaryExpr(endToken token.Type, rhs bool, prec int) Expres
 func (p *Parser) parseExpression(endToken token.Type) Expression {
 	switch {
 	case p.tokenIs(token.LPAREN), p.peekToken.Type.IsOpertor():
-		return p.parseBinaryExpr(endToken, false, 0)
+		return p.parseBinaryExpr(endToken)
 	default:
 		return p.parseUnaryExpr()
 	}

@@ -32,15 +32,23 @@ func GenerateRandomExpression(operationCount int) string {
 	rand.Seed(time.Now().UnixNano())
 	count := 1
 	expression := ""
+	var longparen bool = false
 	for count < operationCount {
-		A := rand.Intn(10) + 1
-		B := rand.Intn(10) + 1
-		parens := (A % 3) == 0
+		A := rand.Intn(100) + 1
+		B := rand.Intn(100) + 1
+		parens := (A % 29) == 0
+		secondParen := (B % 23) == 0 // Adds parentheses around multiple subexpressions
 		lparen := ""
 		rparen := ""
-		if parens == true {
+		if longparen == true {
+			rparen = ")"
+			longparen = false
+		} else if longparen == false && parens == true {
 			lparen = "("
 			rparen = ")"
+		} else if secondParen {
+			lparen = "("
+			longparen = true
 		}
 
 		Op := RandomOperator()
@@ -49,6 +57,9 @@ func GenerateRandomExpression(operationCount int) string {
 	}
 
 	expression = expression[:len(expression)-1] // Remove last operator
+	if longparen {
+		expression = expression + ")"
+	}
 	return expression
 }
 func assertEqual(t *testing.T, a interface{}, b interface{}, message string) {
@@ -175,11 +186,10 @@ func TestBracesTwo(t *testing.T) {
 	restwo := runStatement(program.Statements[1], p.TopScope)
 	assertEqual(t, restwo.number, 27, "")
 	restwo = runStatement(program.Statements[2], p.TopScope)
-	// printExpressionStatement(program.Statements[2])
 	assertEqual(t, restwo.number, 601, "1+6+(6*1)*5*5*4-7")
 
 	restwo = runStatement(program.Statements[3], p.TopScope)
-	printExpressionStatement(program.Statements[3])
+
 	assertEqual(t, restwo.number, 70, "8+4+2-4-(3*5)*(3-7)")
 }
 
@@ -196,7 +206,7 @@ func TestPrecedenceTwo(t *testing.T) {
 	res := runStatement(program.Statements[0], p.TopScope)
 	resTwo := runStatement(program.Statements[1], p.TopScope)
 	resThree := runStatement(program.Statements[2], p.TopScope)
-	assertEqual(t, res.number, 30, "")
+	assertEqual(t, res.number, 30, "27-6/3+5")
 	assertEqual(t, resTwo.number, 17, "")
 	assertEqual(t, resThree.number, 22, "")
 }
@@ -211,8 +221,10 @@ func TestNegativeNumbers(t *testing.T) {
 	assertEqual(t, res.number, 2, "")
 }
 
+// 9223372036854775807
+// 801128428168068000
 func randomExpressionTest(t *testing.T) {
-	input := GenerateRandomExpression(10)
+	input := GenerateRandomExpression(15)
 	expression, _ := govaluate.NewEvaluableExpression(input)
 
 	resultAny, _ := expression.Evaluate(nil)
@@ -227,18 +239,9 @@ func randomExpressionTest(t *testing.T) {
 	assertEqual(t, res.number, result, input)
 }
 
-/*
-Evaluated -16484
-22*29*73-6-(82*70)*11+88
-*/
-/*
-69466
-66-59-17+85+(82*9)*94+19
-*/
-
 func TestRandomLoopSet(t *testing.T) {
 	count := 1
-	for count < 1000 {
+	for count < 10000 {
 		randomExpressionTest(t)
 		count++
 	}
