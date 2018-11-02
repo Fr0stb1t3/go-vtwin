@@ -1,4 +1,4 @@
-package parser
+package ast
 
 import (
 	"fmt"
@@ -6,26 +6,8 @@ import (
 	"github.com/Fr0stb1t3/go-vtwin/token"
 )
 
-type Program struct {
-	Statements []Statement
-}
 type Expression interface {
 	exprNode()
-}
-
-type Identifier struct {
-	Token token.Token // the token.IDENT token
-	Value string
-}
-
-func (i Identifier) String() string {
-	return i.Value
-}
-
-type LetStatement struct {
-	Token token.Token
-	Name  *Identifier
-	Expr  Expression
 }
 
 type ParenExpression struct {
@@ -58,7 +40,7 @@ func (e BinaryExpression) exprNode() {}
 /*
 	Moves the old expression to the left BinaryExpression
 */
-func (e *BinaryExpression) shiftNode() BinaryExpression {
+func (e *BinaryExpression) ShiftNode() BinaryExpression {
 	expr := *e
 	return BinaryExpression{
 		Left: expr,
@@ -69,12 +51,12 @@ func (e *BinaryExpression) emptyNode() bool {
 		e.Operator == token.Token{} &&
 		e.Right == nil
 }
-func (e *BinaryExpression) completeNode() bool {
+func (e *BinaryExpression) CompleteNode() bool {
 	return e.Left != nil &&
 		e.Operator != token.Token{} &&
 		e.Right != nil
 }
-func (e *BinaryExpression) addSubnode(subEx Expression) {
+func (e *BinaryExpression) AddSubnode(subEx Expression) {
 	if e.Left == nil {
 		e.Left = subEx
 		return
@@ -84,20 +66,4 @@ func (e *BinaryExpression) addSubnode(subEx Expression) {
 	}
 	fmt.Printf("\n %v", e)
 	panic("BinaryExpression node is full")
-}
-
-type Statement interface{}
-
-type ExpressionStatement struct {
-	Token token.Token // the first token of the expression
-	Expr  Expression
-}
-
-type Scope struct {
-	Outer   *Scope
-	Objects map[string]*LetStatement
-}
-
-func (s Scope) Lookup(ident string) *LetStatement {
-	return s.Objects[ident]
 }
