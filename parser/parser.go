@@ -133,26 +133,17 @@ func (p *Parser) parseExpression(endToken token.Type) ast.Expression {
 	}
 }
 
-func (p *Parser) parseReassignment() ast.LetStatement {
-	reference := p.TopScope.Objects[p.curToken.Literal]
-	let := reference.(*ast.LetStatement)
-	if reference == nil {
-		panic("Not assigned")
-	}
-	p.nextToken()
-	p.nextToken()
-	let.Expr = p.parseExpression(token.SEMICOLON)
-
-	return *let
-}
-func (p *Parser) checkAssignment(ident string) {
+/*
+	Can be extended to type checking
+*/
+func (p *Parser) checkScope(ident string) {
 	if p.TopScope.Objects[ident] != nil {
 		reference := p.TopScope.Objects[ident]
 		switch reference.(type) {
 		case *ast.ConstStatement:
 			panic("Const cannot be reassigned")
 		case *ast.LetStatement:
-			fmt.Printf("\n %v", reference)
+			return
 		}
 	}
 }
@@ -182,7 +173,7 @@ func (p *Parser) parseAssignment() ast.Reference {
 		p.nextToken()
 		immutable = true
 	}
-	p.checkAssignment(p.curToken.Literal)
+	p.checkScope(p.curToken.Literal)
 
 	if p.tokenIs(token.IDENT) {
 		ident = &ast.Identifier{
@@ -200,27 +191,20 @@ func (p *Parser) parseAssignment() ast.Reference {
 	expr := p.parseExpression(token.SEMICOLON)
 
 	if !immutable {
-		lettAssignment := p.parseLetAssignment(ident, expr)
-		p.TopScope.Objects[ident.Value] = &lettAssignment
-		return lettAssignment
+		assignment := p.parseLetAssignment(ident, expr)
+		p.TopScope.Objects[ident.Value] = &assignment
+		return assignment
 	} else {
-		constAssigment := p.parseConstAssignment(ident, expr)
-		p.TopScope.Objects[ident.Value] = &constAssigment
-		return constAssigment
+		assignment := p.parseConstAssignment(ident, expr)
+		p.TopScope.Objects[ident.Value] = &assignment
+		return assignment
 	}
-
 }
+
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
-	case token.CONST:
-		stmt := p.parseAssignment()
-		return stmt
-	case token.IDENT:
-		stmt := p.parseAssignment()
-		return stmt
-	case token.LET:
-		stmt := p.parseAssignment()
-		return stmt
+	case token.LET, token.CONST, token.IDENT:
+		return p.parseAssignment()
 	case token.RETURN:
 		fmt.Printf("parse as return statement %v\n", p.curToken.Literal)
 	case token.LPAREN, token.INT:
