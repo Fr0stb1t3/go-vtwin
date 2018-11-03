@@ -27,6 +27,7 @@ func TestNextToken(t *testing.T) {
 				"Hello"
 				"Hello world!"
 				const arr <- [1, 2, 3];
+				six <- 6;
 			`
 	tests := []struct {
 		expectedType    token.Type
@@ -128,6 +129,9 @@ func TestNextToken(t *testing.T) {
 		{token.INT, "3"},
 		{token.RBRACK, "]"},
 		{token.SEMICOLON, ";"},
+		{token.IDENT, "six"},
+		{token.ASSIGN, "<-"},
+		{token.INT, "6"},
 	}
 
 	l := New(input)

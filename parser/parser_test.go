@@ -150,6 +150,13 @@ func runStatement(stmt ast.Statement, scope ast.Scope) result {
 			ident:  ls.Name.Value,
 			number: val,
 		}
+	case ast.ConstStatement:
+		ls := stmt.(ast.ConstStatement)
+		val := evaluateExpression(ls.Expr, scope)
+		return result{
+			ident:  ls.Name.Value,
+			number: val,
+		}
 	}
 	return result{}
 }
@@ -250,7 +257,7 @@ func printExpressionStatement(stmt ast.Statement) {
 }
 
 func TestLetAssignment(t *testing.T) {
-	input := `let test <- 1;
+	input := `const test <- 1;
 						let two <- 1+2;
 						let three <- test+two+1;
 						three <- 3;
@@ -260,7 +267,7 @@ func TestLetAssignment(t *testing.T) {
 	p := parser.New(l)
 	program := p.ParseProgram()
 	res := runStatement(program.Statements[0], p.TopScope)
-	assertEqual(t, res.number, 1, "")
+	assertEqual(t, res.number, 1, "const test <- 1")
 	assertEqual(t, res.ident, "test", "")
 
 	resTwo := runStatement(program.Statements[1], p.TopScope)

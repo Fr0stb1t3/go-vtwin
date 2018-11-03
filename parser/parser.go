@@ -145,12 +145,27 @@ func (p *Parser) parseReassignment() ast.LetStatement {
 
 	return *let
 }
-func (p *Parser) parseLetStatement() ast.LetStatement {
-	assignment := ast.LetStatement{
+func (p *Parser) checkAssignment(ident string) {
+	if p.TopScope.Objects[ident] != nil {
+		reference := p.TopScope.Objects[ident]
+		switch reference.(type) {
+		case *ast.ConstStatement:
+			panic("Const cannot be reassigned")
+		case *ast.LetStatement:
+			fmt.Printf("\n %v", reference)
+		}
+	}
+}
+func (p *Parser) parseConstStatement() ast.ConstStatement {
+	if p.tokenIs(token.CONST) {
+		p.nextToken()
+	}
+	p.checkAssignment(p.curToken.Literal)
+
+	assignment := ast.ConstStatement{
 		Token: p.curToken,
 	}
-	if p.peekTokenIs(token.IDENT) {
-		p.nextToken()
+	if p.tokenIs(token.IDENT) {
 		assignment.Name = &ast.Identifier{
 			Token: p.curToken,
 			Value: p.curToken.Literal,
@@ -159,19 +174,48 @@ func (p *Parser) parseLetStatement() ast.LetStatement {
 	if !p.peekTokenIs(token.ASSIGN) {
 		panic("Invalid Let assignment")
 	}
-	p.nextToken() // TODO
+	p.nextToken() // SKIP assignment
 	p.nextToken()
 
 	assignment.Expr = p.parseExpression(token.SEMICOLON)
+
 	p.TopScope.Objects[assignment.Name.Value] = &assignment
+
+	return assignment
+}
+func (p *Parser) parseLetStatement() ast.LetStatement {
+	if p.tokenIs(token.LET) {
+		p.nextToken()
+	}
+	p.checkAssignment(p.curToken.Literal)
+
+	assignment := ast.LetStatement{
+		Token: p.curToken,
+	}
+	if p.tokenIs(token.IDENT) {
+		assignment.Name = &ast.Identifier{
+			Token: p.curToken,
+			Value: p.curToken.Literal,
+		}
+	}
+
+	if !p.peekTokenIs(token.ASSIGN) {
+		panic("Invalid Let assignment")
+	}
+	p.nextToken() // SKIP assignment
+	p.nextToken()
+	assignment.Expr = p.parseExpression(token.SEMICOLON)
+	p.TopScope.Objects[assignment.Name.Value] = &assignment
+
 	return assignment
 }
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
 	case token.CONST:
-		fmt.Printf("parse as immutable assignment %v\n", p.curToken.Literal)
+		stmt := p.parseConstStatement()
+		return stmt
 	case token.IDENT:
-		stmt := p.parseReassignment()
+		stmt := p.parseLetStatement()
 		return stmt
 	case token.LET:
 		stmt := p.parseLetStatement()

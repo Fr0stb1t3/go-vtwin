@@ -31,6 +31,16 @@ func (ls LetStatement) Value() Expression {
 	return ls.Expr
 }
 
+type ConstStatement struct {
+	Token token.Token
+	Name  *Identifier
+	Expr  Expression
+}
+
+func (ls ConstStatement) Value() Expression {
+	return ls.Expr
+}
+
 type Statement interface{}
 
 type ExpressionStatement struct {
