@@ -156,44 +156,36 @@ func (p *Parser) checkAssignment(ident string) {
 		}
 	}
 }
-func (p *Parser) parseConstStatement() ast.ConstStatement {
-	if p.tokenIs(token.CONST) {
-		p.nextToken()
-	}
-	p.checkAssignment(p.curToken.Literal)
 
-	assignment := ast.ConstStatement{
-		Token: p.curToken,
+func (p *Parser) parseLetAssignment(ident *ast.Identifier, expr ast.Expression) ast.LetStatement {
+	return ast.LetStatement{
+		Token: ident.Token,
+		Name:  ident,
+		Expr:  expr,
 	}
-	if p.tokenIs(token.IDENT) {
-		assignment.Name = &ast.Identifier{
-			Token: p.curToken,
-			Value: p.curToken.Literal,
-		}
-	}
-	if !p.peekTokenIs(token.ASSIGN) {
-		panic("Invalid Let assignment")
-	}
-	p.nextToken() // SKIP assignment
-	p.nextToken()
-
-	assignment.Expr = p.parseExpression(token.SEMICOLON)
-
-	p.TopScope.Objects[assignment.Name.Value] = &assignment
-
-	return assignment
 }
-func (p *Parser) parseLetStatement() ast.LetStatement {
+func (p *Parser) parseConstAssignment(ident *ast.Identifier, expr ast.Expression) ast.ConstStatement {
+	return ast.ConstStatement{
+		Token: ident.Token,
+		Name:  ident,
+		Expr:  expr,
+	}
+}
+func (p *Parser) parseAssignment() ast.Reference {
+	var immutable bool
+	var ident *ast.Identifier
 	if p.tokenIs(token.LET) {
 		p.nextToken()
+		immutable = false
+	}
+	if p.tokenIs(token.CONST) {
+		p.nextToken()
+		immutable = true
 	}
 	p.checkAssignment(p.curToken.Literal)
 
-	assignment := ast.LetStatement{
-		Token: p.curToken,
-	}
 	if p.tokenIs(token.IDENT) {
-		assignment.Name = &ast.Identifier{
+		ident = &ast.Identifier{
 			Token: p.curToken,
 			Value: p.curToken.Literal,
 		}
@@ -204,21 +196,30 @@ func (p *Parser) parseLetStatement() ast.LetStatement {
 	}
 	p.nextToken() // SKIP assignment
 	p.nextToken()
-	assignment.Expr = p.parseExpression(token.SEMICOLON)
-	p.TopScope.Objects[assignment.Name.Value] = &assignment
 
-	return assignment
+	expr := p.parseExpression(token.SEMICOLON)
+
+	if !immutable {
+		lettAssignment := p.parseLetAssignment(ident, expr)
+		p.TopScope.Objects[ident.Value] = &lettAssignment
+		return lettAssignment
+	} else {
+		constAssigment := p.parseConstAssignment(ident, expr)
+		p.TopScope.Objects[ident.Value] = &constAssigment
+		return constAssigment
+	}
+
 }
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
 	case token.CONST:
-		stmt := p.parseConstStatement()
+		stmt := p.parseAssignment()
 		return stmt
 	case token.IDENT:
-		stmt := p.parseLetStatement()
+		stmt := p.parseAssignment()
 		return stmt
 	case token.LET:
-		stmt := p.parseLetStatement()
+		stmt := p.parseAssignment()
 		return stmt
 	case token.RETURN:
 		fmt.Printf("parse as return statement %v\n", p.curToken.Literal)
