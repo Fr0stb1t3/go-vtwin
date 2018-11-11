@@ -5,9 +5,9 @@ import (
 
 	"testing"
 
-	"github.com/Fr0stb1t3/go-vtwin/ast"
-	"github.com/Fr0stb1t3/go-vtwin/lexer"
-	"github.com/Fr0stb1t3/go-vtwin/parser"
+	"github.com/antonikliment/go-vtwin/ast"
+	"github.com/antonikliment/go-vtwin/lexer"
+	"github.com/antonikliment/go-vtwin/parser"
 	"github.com/Knetic/govaluate"
 )
 
