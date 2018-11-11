@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/Fr0stb1t3/go-vtwin/ast"
-	"github.com/Fr0stb1t3/go-vtwin/token"
+	"github.com/antonikliment/go-vtwin/ast"
+	"github.com/antonikliment/go-vtwin/token"
 )
 
 func RandomOperator() string {
