@@ -3,9 +3,9 @@ package parser
 import (
 	"fmt"
 
-	"github.com/Fr0stb1t3/go-vtwin/ast"
-	"github.com/Fr0stb1t3/go-vtwin/lexer"
-	"github.com/Fr0stb1t3/go-vtwin/token"
+	"github.com/antonikliment/go-vtwin/ast"
+	"github.com/antonikliment/go-vtwin/lexer"
+	"github.com/antonikliment/go-vtwin/token"
 )
 
 type Parser struct {
