@@ -3,7 +3,7 @@ package ast
 import (
 	"fmt"
 
-	"github.com/Fr0stb1t3/go-vtwin/token"
+	"github.com/antonikliment/go-vtwin/token"
 )
 
 type Expression interface {
