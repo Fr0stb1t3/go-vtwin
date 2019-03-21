@@ -136,6 +136,24 @@ func TestLetAssignment(t *testing.T) {
 	assertEqual(t, resThreeFour.ident, "four", "")
 	assertEqual(t, resThreeFour.number, 1, "")
 }
+
+
+func TestBlockStatement(t *testing.T) {
+	input := `{
+		const test <-1;
+		return test
+	}
+	`
+	statements, scope := parseInput(input + ";")
+	res := runStatement(statements[0], scope)
+	assertEqual(t, res.number, 1, "const test <- 1")
+}
+func TestConditionStatement(t *testing.T) {
+
+}
+func TestLoopBlock(t *testing.T) {
+
+}
 /*
 func TestFuncBlock(t *testing.T) {
 	input := `

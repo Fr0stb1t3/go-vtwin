@@ -1,8 +1,6 @@
 package parser
 
 import (
-	"fmt"
-
 	"github.com/antonikliment/go-vtwin/ast"
 	"github.com/antonikliment/go-vtwin/lexer"
 	"github.com/antonikliment/go-vtwin/token"
@@ -22,7 +20,9 @@ func New(l *lexer.Lexer) *Parser {
 		errors: []string{},
 	}
 
-	p.TopScope = &ast.Scope{Objects: make(map[string]ast.Reference)}
+	p.TopScope = &ast.Scope{
+		Objects: make(map[string]ast.Reference),
+	}
 	// Read two tokens, so curToken and peekToken are both set
 	p.nextToken()
 	p.nextToken()
@@ -30,7 +30,7 @@ func New(l *lexer.Lexer) *Parser {
 	return p
 }
 func (p *Parser) openScope() {
-		p.TopScope = ast.NewScope(p.TopScope)
+	p.TopScope = ast.NewScope(p.TopScope)
 }
 
 func (p *Parser) closeScope() {
@@ -54,7 +54,6 @@ func (p *Parser) parseUnaryExpr() ast.Expression {
 		Operand:  p.curToken,
 	}
 }
-
 
 func (p *Parser) parseParenExpr() ast.Expression {
 	var parenCounter int
@@ -173,6 +172,11 @@ func (p *Parser) parseConstAssignment(ident *ast.Identifier, expr ast.Expression
 }
 
 func (p *Parser) parseFuncDecl() ast.Expression {
+	p.openScope()
+	if !p.tokenIs(token.LPAREN) {
+		panic("todo")
+	}
+	p.closeScope()
 	return nil
 }
 func (p *Parser) parseAssignment() ast.Reference {
@@ -196,7 +200,7 @@ func (p *Parser) parseAssignment() ast.Reference {
 	}
 
 	if !p.peekTokenIs(token.ASSIGN) {
-		panic("Invalid Let assignment"+p.peekToken.Literal)
+		panic("Invalid Let assignment" + p.peekToken.Literal)
 	}
 	p.nextToken() // SKIP assignment
 	p.nextToken()
@@ -213,15 +217,39 @@ func (p *Parser) parseAssignment() ast.Reference {
 		return assignment
 	}
 }
+func (p *Parser) parseBlockStatement() ast.BlockStatement {
+	block := ast.BlockStatement{
+		Token: p.curToken,
+	}
+	p.nextToken()
+	for !p.peekTokenIs(token.RBRACE) {
+		stmt := p.parseStatement()
+		if stmt != nil {
+			block.Statements = append(block.Statements, stmt)
+		}
+		p.nextToken()
+	}
+	return block
+}
 
+func (p *Parser) parseReturnStatement() ast.Statement {
+	stmt := ast.ReturnStatement{
+		Token: p.curToken,
+	}
+	// p.nextToken()
+	// stmt.ReturnVal = p.parseExpression(token.SEMICOLON)
+	return stmt
+}
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
-	case token.LET, token.CONST://, token.IDENT:
+	case token.LET, token.CONST: //, token.IDENT:
 		return p.parseAssignment()
 	case token.FUNCTION:
 		return p.parseFuncDecl()
 	case token.RETURN:
-		fmt.Printf("parse as return statement %v\n", p.curToken.Literal)
+		return p.parseReturnStatement()
+	case token.LBRACE:
+		return p.parseBlockStatement()
 	case token.IDENT:
 		return p.parseAssignment()
 	case token.LPAREN, token.INT:

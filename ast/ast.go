@@ -47,10 +47,24 @@ type ExpressionStatement struct {
 	Token token.Token // the first token of the expression
 	Expr  Expression
 }
-
+type BlockStatement struct {
+	Token      token.Token // the { token
+	Statements []Statement
+}
+type ReturnStatement struct {
+	Token     token.Token // RETURN token
+	ReturnVal Expression
+}
 type Scope struct {
 	Outer   *Scope
 	Objects map[string]Reference
+}
+
+func NewScope(outer *Scope) *Scope {
+	return &Scope{
+		Outer:   outer,
+		Objects: make(map[string]Reference),
+	}
 }
 
 func (s Scope) Lookup(ident string) Reference {
