@@ -11,7 +11,7 @@ import (
 	"github.com/Knetic/govaluate"
 )
 
-func parseInput(input string) ([]ast.Statement, ast.Scope) {
+func parseInput(input string) ([]ast.Statement, *ast.Scope) {
 	l := lexer.New(input)
 	p := parser.New(l)
 	program := p.ParseProgram()
@@ -87,8 +87,7 @@ func randomExpressionTest(t *testing.T) {
 	resultAny, _ := expression.Evaluate(nil)
 	resultFloat := resultAny.(float64)
 	result := int(resultFloat)
-	// fmt.Printf("\n%v", input)
-	// fmt.Printf("\n%v", result)
+
 	statements, scope := parseInput(input + ";")
 
 	res := runStatement(statements[0], scope)
@@ -137,3 +136,21 @@ func TestLetAssignment(t *testing.T) {
 	assertEqual(t, resThreeFour.ident, "four", "")
 	assertEqual(t, resThreeFour.number, 1, "")
 }
+/*
+func TestFuncBlock(t *testing.T) {
+	input := `
+	func returnSomething(A) {
+		return A;
+	}
+	func sum(A,B) {
+		return A+B;
+	}
+	const outOne <- returnSomething(2);
+	const outTwo <- sum(5, 2);
+	`
+	statements, scope := parseInput(input + ";")
+
+	res := runStatement(statements[0], scope)
+	assertEqual(t, res.number, 1, "const test <- 1")
+}
+*/

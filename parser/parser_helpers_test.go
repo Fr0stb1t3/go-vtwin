@@ -78,7 +78,7 @@ func divide(A int, B int) int {
 	return A / B
 }
 
-func evaluateUnaryExpr(ex ast.Expression, scope ast.Scope) int {
+func evaluateUnaryExpr(ex ast.Expression, scope *ast.Scope) int {
 	uax := ex.(ast.UnaryExpression)
 	switch uax.Operand.Type {
 	case token.INT:
@@ -99,7 +99,7 @@ func evaluateUnaryExpr(ex ast.Expression, scope ast.Scope) int {
 	}
 }
 
-func evaluateBinaryExpr(ex ast.Expression, scope ast.Scope) int {
+func evaluateBinaryExpr(ex ast.Expression, scope *ast.Scope) int {
 	be := ex.(ast.BinaryExpression)
 	a := evaluateExpression(be.Left, scope)
 	b := evaluateExpression(be.Right, scope)
@@ -117,7 +117,7 @@ func evaluateBinaryExpr(ex ast.Expression, scope ast.Scope) int {
 	return 0
 }
 
-func evaluateExpression(ex ast.Expression, scope ast.Scope) int {
+func evaluateExpression(ex ast.Expression, scope *ast.Scope) int {
 	switch ex.(type) {
 	case ast.ParenExpression:
 		pex := ex.(ast.ParenExpression)
@@ -135,7 +135,7 @@ type result struct {
 	ident  string
 }
 
-func runStatement(stmt ast.Statement, scope ast.Scope) result {
+func runStatement(stmt ast.Statement, scope *ast.Scope) result {
 	switch stmt.(type) {
 	case ast.ExpressionStatement:
 		es := stmt.(ast.ExpressionStatement)

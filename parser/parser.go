@@ -11,7 +11,7 @@ import (
 type Parser struct {
 	l         *lexer.Lexer
 	errors    []string
-	TopScope  ast.Scope
+	TopScope  *ast.Scope
 	curToken  token.Token
 	peekToken token.Token
 }
@@ -22,12 +22,19 @@ func New(l *lexer.Lexer) *Parser {
 		errors: []string{},
 	}
 
-	p.TopScope = ast.Scope{Objects: make(map[string]ast.Reference)}
+	p.TopScope = &ast.Scope{Objects: make(map[string]ast.Reference)}
 	// Read two tokens, so curToken and peekToken are both set
 	p.nextToken()
 	p.nextToken()
 
 	return p
+}
+func (p *Parser) openScope() {
+		p.TopScope = ast.NewScope(p.TopScope)
+}
+
+func (p *Parser) closeScope() {
+	p.TopScope = p.TopScope.Outer
 }
 
 func (p *Parser) nextToken() {
@@ -47,6 +54,8 @@ func (p *Parser) parseUnaryExpr() ast.Expression {
 		Operand:  p.curToken,
 	}
 }
+
+
 func (p *Parser) parseParenExpr() ast.Expression {
 	var parenCounter int
 	pExpr := ast.ParenExpression{}
@@ -162,6 +171,10 @@ func (p *Parser) parseConstAssignment(ident *ast.Identifier, expr ast.Expression
 		Expr:  expr,
 	}
 }
+
+func (p *Parser) parseFuncDecl() ast.Expression {
+	return nil
+}
 func (p *Parser) parseAssignment() ast.Reference {
 	var immutable bool
 	var ident *ast.Identifier
@@ -183,7 +196,7 @@ func (p *Parser) parseAssignment() ast.Reference {
 	}
 
 	if !p.peekTokenIs(token.ASSIGN) {
-		panic("Invalid Let assignment")
+		panic("Invalid Let assignment"+p.peekToken.Literal)
 	}
 	p.nextToken() // SKIP assignment
 	p.nextToken()
@@ -203,10 +216,14 @@ func (p *Parser) parseAssignment() ast.Reference {
 
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
-	case token.LET, token.CONST, token.IDENT:
+	case token.LET, token.CONST://, token.IDENT:
 		return p.parseAssignment()
+	case token.FUNCTION:
+		return p.parseFuncDecl()
 	case token.RETURN:
 		fmt.Printf("parse as return statement %v\n", p.curToken.Literal)
+	case token.IDENT:
+		return p.parseAssignment()
 	case token.LPAREN, token.INT:
 		start := p.curToken
 		expression := p.parseExpression(token.SEMICOLON)
