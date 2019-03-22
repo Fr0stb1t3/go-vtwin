@@ -5,10 +5,10 @@ import (
 
 	"testing"
 
+	"github.com/Knetic/govaluate"
 	"github.com/antonikliment/go-vtwin/ast"
 	"github.com/antonikliment/go-vtwin/lexer"
 	"github.com/antonikliment/go-vtwin/parser"
-	"github.com/Knetic/govaluate"
 )
 
 func parseInput(input string) ([]ast.Statement, *ast.Scope) {
@@ -137,16 +137,15 @@ func TestLetAssignment(t *testing.T) {
 	assertEqual(t, resThreeFour.number, 1, "")
 }
 
-
 func TestBlockStatement(t *testing.T) {
 	input := `{
-		const test <-1;
-		return test
+		const test <- 3;
+		return test;
 	}
 	`
 	statements, scope := parseInput(input + ";")
 	res := runStatement(statements[0], scope)
-	assertEqual(t, res.number, 1, "const test <- 1")
+	assertEqual(t, res.number, 3, "const test <- 1")
 }
 func TestConditionStatement(t *testing.T) {
 
@@ -154,6 +153,7 @@ func TestConditionStatement(t *testing.T) {
 func TestLoopBlock(t *testing.T) {
 
 }
+
 /*
 func TestFuncBlock(t *testing.T) {
 	input := `

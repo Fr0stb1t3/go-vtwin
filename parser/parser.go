@@ -236,8 +236,8 @@ func (p *Parser) parseReturnStatement() ast.Statement {
 	stmt := ast.ReturnStatement{
 		Token: p.curToken,
 	}
-	// p.nextToken()
-	// stmt.ReturnVal = p.parseExpression(token.SEMICOLON)
+	p.nextToken()
+	stmt.ReturnVal = p.parseExpression(token.SEMICOLON)
 	return stmt
 }
 func (p *Parser) parseStatement() ast.Statement {

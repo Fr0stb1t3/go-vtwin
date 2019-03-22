@@ -157,6 +157,30 @@ func runStatement(stmt ast.Statement, scope *ast.Scope) result {
 			ident:  ls.Name.Value,
 			number: val,
 		}
+	case ast.BlockStatement:
+		bs := stmt.(ast.BlockStatement)
+		//	val := runStatement(bs.Statements[0], scope)
+		res := result{}
+		for _, stmt := range bs.Statements {
+			value := runStatement(stmt, scope)
+			// fmt.Printf("ptato %v \n", stmt)
+			_, ok := stmt.(ast.ReturnStatement)
+			if ok == true {
+				res = value
+			}
+			// index is the index where we are
+			// element is the element from someSlice for where we are
+		}
+		/*	*/
+		return res
+	case ast.ReturnStatement:
+		rs := stmt.(ast.ReturnStatement)
+		val := evaluateExpression(rs.ReturnVal, scope)
+		return result{
+			number: val,
+		}
+	default:
+		panic("New statement")
 	}
 	return result{}
 }
