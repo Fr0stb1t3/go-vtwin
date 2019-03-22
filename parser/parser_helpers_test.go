@@ -135,6 +135,17 @@ type result struct {
 	ident  string
 }
 
+func runStatements(stmts []ast.Statement, scope *ast.Scope) result {
+	res := result{}
+	for _, stmt := range stmts {
+		value := runStatement(stmt, scope)
+		_, ok := stmt.(ast.ReturnStatement)
+		if ok == true {
+			res = value
+		}
+	}
+	return res
+}
 func runStatement(stmt ast.Statement, scope *ast.Scope) result {
 	switch stmt.(type) {
 	case ast.ExpressionStatement:
@@ -159,20 +170,7 @@ func runStatement(stmt ast.Statement, scope *ast.Scope) result {
 		}
 	case ast.BlockStatement:
 		bs := stmt.(ast.BlockStatement)
-		//	val := runStatement(bs.Statements[0], scope)
-		res := result{}
-		for _, stmt := range bs.Statements {
-			value := runStatement(stmt, scope)
-			// fmt.Printf("ptato %v \n", stmt)
-			_, ok := stmt.(ast.ReturnStatement)
-			if ok == true {
-				res = value
-			}
-			// index is the index where we are
-			// element is the element from someSlice for where we are
-		}
-		/*	*/
-		return res
+		return runStatements(bs.Statements, scope)
 	case ast.ReturnStatement:
 		rs := stmt.(ast.ReturnStatement)
 		val := evaluateExpression(rs.ReturnVal, scope)
@@ -182,5 +180,4 @@ func runStatement(stmt ast.Statement, scope *ast.Scope) result {
 	default:
 		panic("New statement")
 	}
-	return result{}
 }

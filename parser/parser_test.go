@@ -140,12 +140,13 @@ func TestLetAssignment(t *testing.T) {
 func TestBlockStatement(t *testing.T) {
 	input := `{
 		const test <- 3;
-		return test;
+		let out <- 6 - test;
+		return out + 1;;
 	}
-	`
+	` // TODO FIX SEMICOLON
 	statements, scope := parseInput(input + ";")
 	res := runStatement(statements[0], scope)
-	assertEqual(t, res.number, 3, "const test <- 1")
+	assertEqual(t, res.number, 4, "const test <- 1")
 }
 func TestConditionStatement(t *testing.T) {
 
