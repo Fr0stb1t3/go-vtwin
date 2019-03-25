@@ -136,29 +136,27 @@ func (p *Parser) parseBinaryExpr(precInput int) ast.Expression {
 				lowPrecedenceExpr.Left = expression.Left
 				lowPrecedenceExpr.Operator = expression.Operator
 				expression = expression.UnshiftNode()
-			} else if lowPrecedenceExpr.Left != nil && prec <= lowPrecedenceExpr.Operator.Type.Precedence() {
+			} else if prec <= lowPrecedenceExpr.Operator.Type.Precedence() {
 				lowPrecedenceExpr.Right = expression
 				expression = lowPrecedenceExpr
 				lowPrecedenceExpr = ast.BinaryExpression{}
 				expression = expression.ShiftNode()
-			} else if !p.tokenIs(token.SEMICOLON) {
+			} else {
 				expression = expression.ShiftNode()
 			}
 		}
 		switch {
+		case p.curToken.Type.IsOpertor():
+			expression.Operator = tok
 		case p.tokenIs(token.LPAREN):
 			expr := p.parseParenExpr()
 			expression.AddSubnode(expr)
-		case p.curToken.Type.IsOpertor() && !expression.Operator.Type.IsOpertor():
-			expression.Operator = tok
 		default:
 			expr := p.parseUnaryExpr()
 			expression.AddSubnode(expr)
 		}
 
-		if !p.peekTokenIs(token.EOF) {
-			p.nextToken()
-		}
+		p.nextToken()
 	}
 	// Resolve any dangling expressions
 	if lowPrecedenceExpr.Left != nil {
