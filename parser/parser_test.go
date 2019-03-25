@@ -155,21 +155,15 @@ func TestLoopBlock(t *testing.T) {
 
 }
 
-/*
 func TestFuncBlock(t *testing.T) {
 	input := `
-	func returnSomething(A) {
-		return A;
-	}
-	func sum(A,B) {
-		return A+B;
-	}
-	const outOne <- returnSomething(2);
-	const outTwo <- sum(5, 2);
+	func returnSomething() {
+		return 1;
+	};
+	let A <- returnSomething();
 	`
 	statements, scope := parseInput(input + ";")
 
-	res := runStatement(statements[0], scope)
+	res := runStatements(statements, scope)
 	assertEqual(t, res.number, 1, "const test <- 1")
 }
-*/

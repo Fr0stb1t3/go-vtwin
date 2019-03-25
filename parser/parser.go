@@ -63,7 +63,7 @@ func (p *Parser) parseParenExpr() ast.Expression {
 	for p.tokenIs(token.LPAREN) {
 		parenCounter++
 		pExpr.Lparen = p.curToken
-		p.expectTokenToBe(pExpr.Lparen)
+		p.expectTokenToBe(token.LPAREN)
 	}
 	pExpr.Expr = p.parseExpression(token.RPAREN)
 	for p.peekTokenIs(token.RPAREN) {
@@ -175,12 +175,35 @@ func (p *Parser) parseConstAssignment(ident *ast.Identifier, expr ast.Expression
 }
 
 func (p *Parser) parseFunction() ast.Function {
+	p.nextToken()
+	ident := p.parseIdentifier()
+	p.expectTokenToBe(token.LPAREN)
+
+	p.expectTokenToBe(token.RPAREN)
 	p.openScope()
-	if !p.tokenIs(token.LPAREN) {
-		panic("todo")
-	}
+
+	body := p.parseBlockStatement()
 	p.closeScope()
-	return ast.Function{}
+
+	return ast.Function{
+		Name: ident,
+		Body: &body,
+	}
+}
+func (p *Parser) parseIdentifier() *ast.Identifier {
+	//pos := p.pos
+	name := "_"
+	tok := p.curToken
+	if p.curToken.Type == token.IDENT {
+		name = p.curToken.Literal
+		p.nextToken()
+	} /*  else {
+		p.expect(token.IDENT) // use expect() error handling
+	}*/
+	return &ast.Identifier{
+		Token: tok,
+		Value: name,
+	}
 }
 func (p *Parser) parseAssignment() ast.Reference {
 	var immutable bool
@@ -196,17 +219,12 @@ func (p *Parser) parseAssignment() ast.Reference {
 	p.checkScope(p.curToken.Literal)
 
 	if p.tokenIs(token.IDENT) {
-		ident = &ast.Identifier{
-			Token: p.curToken,
-			Value: p.curToken.Literal,
-		}
+		ident = p.parseIdentifier()
 	}
-
-	if !p.peekTokenIs(token.ASSIGN) {
+	if !p.tokenIs(token.ASSIGN) {
 		panic("Invalid Let assignment" + p.peekToken.Literal)
 	}
 	p.nextToken() // SKIP assignment
-	p.nextToken()
 
 	expr := p.parseExpression(token.SEMICOLON)
 
@@ -214,11 +232,12 @@ func (p *Parser) parseAssignment() ast.Reference {
 		assignment := p.parseLetAssignment(ident, expr)
 		p.TopScope.Objects[ident.Value] = &assignment
 		return assignment
-	} else {
-		assignment := p.parseConstAssignment(ident, expr)
-		p.TopScope.Objects[ident.Value] = &assignment
-		return assignment
 	}
+
+	assignment := p.parseConstAssignment(ident, expr)
+	p.TopScope.Objects[ident.Value] = &assignment
+	return assignment
+
 }
 func (p *Parser) parseBlockStatement() ast.BlockStatement {
 	block := ast.BlockStatement{
@@ -230,14 +249,16 @@ func (p *Parser) parseBlockStatement() ast.BlockStatement {
 	block.Statements = statements
 
 	block.Rbrace = p.curToken
-	p.expectTokenToBe(block.Rbrace)
+
+	p.expectTokenToBe(token.RBRACE)
 	return block
 }
 
-func (p *Parser) expectTokenToBe(tok token.Token) {
+func (p *Parser) expectTokenToBe(tok token.Type) {
 	// pos := p.pos
-	if p.curToken != tok {
-		p.errorExpected("'" + tok.Literal + "'")
+	if p.curToken.Type != tok {
+		p.errorExpected("expected '" + tok.String() + "' got " + p.curToken.Type.String())
+		panic("Fatal")
 	}
 	p.nextToken() // make progress
 	return        //pos

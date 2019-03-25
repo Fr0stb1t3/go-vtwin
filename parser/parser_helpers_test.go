@@ -1,6 +1,7 @@
 package parser_test
 
 import (
+	"fmt"
 	"time"
 
 	"math/rand"
@@ -87,7 +88,7 @@ func evaluateUnaryExpr(ex ast.Expression, scope *ast.Scope) int {
 	case token.IDENT:
 		ref := scope.Lookup(uax.Operand.Literal)
 		if ref == nil {
-			panic("Identifier not found")
+			panic("Identifier '" + uax.Operand.Literal + "' not found")
 		}
 		return evaluateExpression(ref.Value(), scope)
 	case token.TRUE:
@@ -146,6 +147,7 @@ func runStatements(stmts []ast.Statement, scope *ast.Scope) result {
 	}
 	return res
 }
+
 func runStatement(stmt ast.Statement, scope *ast.Scope) result {
 	switch stmt.(type) {
 	case ast.ExpressionStatement:
@@ -157,6 +159,7 @@ func runStatement(stmt ast.Statement, scope *ast.Scope) result {
 	case ast.LetStatement:
 		ls := stmt.(ast.LetStatement)
 		val := evaluateExpression(ls.Expr, scope)
+		// fmt.Printf("%v \n", ls.Name.Value)
 		return result{
 			ident:  ls.Name.Value,
 			number: val,
@@ -177,7 +180,10 @@ func runStatement(stmt ast.Statement, scope *ast.Scope) result {
 		return result{
 			number: val,
 		}
+	case ast.Function:
+		return result{}
 	default:
+		fmt.Printf("%v \n", stmt)
 		panic("New statement")
 	}
 }
