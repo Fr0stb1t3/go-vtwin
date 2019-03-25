@@ -70,6 +70,15 @@ func (e *BinaryExpression) ShiftNode() BinaryExpression {
 		Left: expr,
 	}
 }
+func (e *BinaryExpression) UnshiftNode() BinaryExpression {
+
+	return BinaryExpression{
+		Operator: token.Token{},
+		Left:     e.Right,
+		Right:    nil,
+	}
+
+}
 func (e *BinaryExpression) emptyNode() bool {
 	return e.Left == nil &&
 		e.Operator == token.Token{} &&

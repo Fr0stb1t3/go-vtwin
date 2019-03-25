@@ -138,20 +138,20 @@ func TestLetAssignment(t *testing.T) {
 	assertEqual(t, resThreeFour.number, 1, "")
 }
 
-/*
 func TestBlockStatement(t *testing.T) {
 	input := `{
 		const test <- 3;
 		let out <- 6 - test;
 		return out + 1;
 	}
-	` // TODO FIX SEMICOLON
+	`
 	statements, scope := parseInput(input + ";")
 	res := runStatement(statements[0], scope)
 	assertEqual(t, res.number, 4, "const test <- 1")
 }
 
-*/
+/*
+ */
 func TestConditionStatement(t *testing.T) {
 
 }

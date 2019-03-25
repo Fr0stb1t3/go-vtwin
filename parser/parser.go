@@ -100,7 +100,7 @@ func (p *Parser) parseParenExpr() ast.Expression {
 		pExpr.Lparen = p.curToken
 		p.expectTokenToBe(token.LPAREN)
 	}
-	pExpr.Expr = p.parseExpression(token.RPAREN)
+	pExpr.Expr = p.parseExpression()
 	for p.peekTokenIs(token.RPAREN) {
 		parenCounter--
 		p.nextToken()
@@ -125,23 +125,23 @@ func (p *Parser) parseParenExpr() ast.Expression {
 			If there are more tokens left shift the previous expresion as a left node and continue
 			else return the expression
 */
-func (p *Parser) parseBinaryExpr(endToken token.Type) ast.Expression {
+
+func (p *Parser) parseBinaryExpr(precInput int) ast.Expression {
 	expression := ast.BinaryExpression{}
 	lowPrecedenceExpr := ast.BinaryExpression{}
-	for !p.tokenIs(endToken) {
+	for !p.tokenIs(token.SEMICOLON) && !p.tokenIs(token.RPAREN) {
+		tok, prec := p.Precedence()
 		if expression.CompleteNode() {
-			if p.curToken.Type.Precedence() > expression.Operator.Type.Precedence() {
+			if prec > expression.Operator.Type.Precedence() {
 				lowPrecedenceExpr.Left = expression.Left
 				lowPrecedenceExpr.Operator = expression.Operator
-				expression.Operator = token.Token{}
-				expression.Left = expression.Right
-				expression.Right = nil
-			} else if lowPrecedenceExpr.Left != nil && p.curToken.Type.Precedence() <= lowPrecedenceExpr.Operator.Type.Precedence() {
+				expression = expression.UnshiftNode()
+			} else if lowPrecedenceExpr.Left != nil && prec <= lowPrecedenceExpr.Operator.Type.Precedence() {
 				lowPrecedenceExpr.Right = expression
 				expression = lowPrecedenceExpr
 				lowPrecedenceExpr = ast.BinaryExpression{}
 				expression = expression.ShiftNode()
-			} else if !p.tokenIs(endToken) {
+			} else if !p.tokenIs(token.SEMICOLON) {
 				expression = expression.ShiftNode()
 			}
 		}
@@ -149,11 +149,9 @@ func (p *Parser) parseBinaryExpr(endToken token.Type) ast.Expression {
 		case p.tokenIs(token.LPAREN):
 			expr := p.parseParenExpr()
 			expression.AddSubnode(expr)
-
 		case p.curToken.Type.IsOpertor() && !expression.Operator.Type.IsOpertor():
-			expression.Operator = p.curToken
-
-		case expression.Left == nil, expression.Right == nil:
+			expression.Operator = tok
+		default:
 			expr := p.parseUnaryExpr()
 			expression.AddSubnode(expr)
 		}
@@ -170,11 +168,11 @@ func (p *Parser) parseBinaryExpr(endToken token.Type) ast.Expression {
 	return expression
 }
 
-func (p *Parser) parseExpression(endToken token.Type) ast.Expression {
+func (p *Parser) parseExpression() ast.Expression {
 	switch {
 	case p.tokenIs(token.LPAREN), p.peekToken.Type.IsOpertor():
 		// fmt.Printf("Default parseBinaryExpr %v \n", p.curToken)
-		return p.parseBinaryExpr(endToken)
+		return p.parseBinaryExpr(token.LowestPrec + 1)
 	default:
 		// fmt.Printf("Default assignment %v \n", p.curToken)
 		return p.parseUnaryExpr()
@@ -286,7 +284,7 @@ func (p *Parser) parseAssignment() ast.Reference {
 	}
 	p.nextToken() // SKIP assignment
 
-	expr := p.parseExpression(token.SEMICOLON)
+	expr := p.parseExpression()
 
 	if !immutable {
 		assignment := p.parseLetAssignment(ident, expr)
@@ -339,7 +337,7 @@ func (p *Parser) parseReturnStatement() ast.Statement {
 		Token: p.curToken,
 	}
 	p.nextToken()
-	stmt.ReturnVal = p.parseExpression(token.SEMICOLON)
+	stmt.ReturnVal = p.parseExpression()
 	return stmt
 }
 func (p *Parser) parseStatementList() (statements []ast.Statement) {
@@ -372,7 +370,7 @@ func (p *Parser) parseStatement() (stmt ast.Statement) {
 		stmt = p.parseAssignment()
 	case token.LPAREN, token.INT:
 		start := p.curToken
-		expression := p.parseExpression(token.SEMICOLON)
+		expression := p.parseExpression()
 		stmt = ast.ExpressionStatement{
 			Token: start,
 			Expr:  expression,
@@ -391,6 +389,9 @@ func (p *Parser) ParseProgram() *ast.Program {
 		p.nextToken()
 	}
 	return program
+}
+func (p *Parser) Precedence() (token.Token, int) {
+	return p.curToken, p.curToken.Type.Precedence()
 }
 func (p *Parser) peekPrecedence() int {
 	return p.peekToken.Type.Precedence()
