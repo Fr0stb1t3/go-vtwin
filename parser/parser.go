@@ -43,6 +43,27 @@ func (p *Parser) nextToken() {
 	p.curToken = p.peekToken
 	p.peekToken = p.l.NextToken()
 }
+func (p *Parser) parseOperand() ast.Expression {
+	switch p.curToken.Type {
+	case token.IDENT:
+		x := p.parseIdentifier()
+		p.resolve(x)
+		return x
+	case token.INT, token.FLOAT, token.CHAR, token.STRING, token.TRUE, token.FALSE:
+		x := &ast.SimpleLiteral{
+			Type:  p.curToken.Type,
+			Value: p.curToken.Literal,
+		}
+		return x
+	default:
+		fmt.Printf("%v \n", p.curToken)
+		// p.nextToken()
+	}
+	return nil
+}
+func (p *Parser) parsePrimaryExpression() ast.Expression {
+	return nil
+}
 
 func (p *Parser) parseUnaryExpr() ast.Expression {
 	operator := token.NewToken(token.ADD, '+')
@@ -50,10 +71,17 @@ func (p *Parser) parseUnaryExpr() ast.Expression {
 	case token.ADD, token.SUBT, token.NOT, token.XOR, token.AND:
 		operator = p.curToken
 		p.nextToken()
+		expr := p.parseOperand()
+		fmt.Printf("parseIdent %v \n", expr)
+		return ast.UnaryExpression{
+			Operator: operator,
+			Operand:  expr,
+		}
 	}
+	expr := p.parseOperand()
 	return ast.UnaryExpression{
 		Operator: operator,
-		Operand:  p.curToken,
+		Operand:  expr,
 	}
 }
 
@@ -158,6 +186,24 @@ func (p *Parser) checkScope(ident string) {
 		}
 	}
 }
+func (p *Parser) resolve(ex ast.Expression) {
+	ident, _ := ex.(*ast.Identifier)
+	if ident == nil {
+		return
+	}
+
+	if ident.Value == "_" {
+		return
+	}
+	for s := p.TopScope; s != nil; s = s.Outer {
+		if obj := s.Lookup(ident.Value); obj != nil {
+
+			// fmt.Printf("Resolve: %v \n", obj)
+			ident.Expr = obj.Value()
+			return
+		}
+	}
+}
 
 func (p *Parser) parseLetAssignment(ident *ast.Identifier, expr ast.Expression) ast.LetStatement {
 	return ast.LetStatement{
@@ -210,6 +256,7 @@ func (p *Parser) parseIdentifier() *ast.Identifier {
 	}
 }
 func (p *Parser) parseAssignment() ast.Reference {
+	// 	asgStmt := ast.AssignmentStatement{}
 	var immutable bool
 	var ident *ast.Identifier
 	if p.tokenIs(token.LET) {
@@ -294,6 +341,12 @@ func (p *Parser) parseStatementList() (statements []ast.Statement) {
 		}
 		p.nextToken()
 	}
+	return
+}
+func (p *Parser) parseSimpleExpression() (exprStmt ast.ExpressionStatement) {
+	// expression := p.parseAssignment()
+	// expr = ast.ExpressionStatement{}
+	//	exprStmt.Expr = expression
 	return
 }
 func (p *Parser) parseStatement() (stmt ast.Statement) {

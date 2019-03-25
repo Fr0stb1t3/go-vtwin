@@ -79,29 +79,56 @@ func divide(A int, B int) int {
 	return A / B
 }
 
+// func evaluateSimpleLiteral(ex ast.Expression, scope *ast.Scope) int {
+// 	uax := ex.(ast.UnaryExpression)
+// }
 func evaluateUnaryExpr(ex ast.Expression, scope *ast.Scope) int {
 	uax := ex.(ast.UnaryExpression)
-	switch uax.Operand.Type {
-	case token.INT:
-		val, _ := strconv.Atoi(uax.Operator.Literal + uax.Operand.Literal)
+	switch uax.Operand.(type) {
+	case *ast.SimpleLiteral:
+		simple := uax.Operand.(*ast.SimpleLiteral)
+		val, _ := strconv.Atoi(uax.Operator.Literal + simple.Value)
+
+		// fmt.Printf("Val: %v\n", val)
 		return val
-	case token.IDENT:
-		ref := scope.Lookup(uax.Operand.Literal)
+	case *ast.Identifier:
+		ident := uax.Operand.(*ast.Identifier)
+		ref := scope.Lookup(ident.Value)
 		if ref == nil {
-			panic("Identifier '" + uax.Operand.Literal + "' not found")
+			panic("Identifier '" + ident.Value + "' not found")
 		}
-		return evaluateExpression(ref.Value(), scope)
-	case token.TRUE:
-		return 1
-	case token.FALSE:
-		return 0
+		out := evaluateExpression(ref.Value(), scope)
+		return out
 	default:
-		panic("evaluateUnaryExpr: Unknown type")
+		// fmt.Printf("x- %v\n", uax)
+		panic("x- %v")
+		// return -1
+
 	}
+	/*
+		uLiteral := uax.Operand.(*ast.SimpleLiteral)
+		switch uLiteral.Type {
+		// case token.INT:
+		// 	val, _ := strconv.Atoi(uax.Operator.Literal + uLiteral.Value)
+		// 	return val
+		// case token.IDENT:
+		// 	ref := scope.Lookup(uLiteral.Value)
+		// 	if ref == nil {
+		// 		panic("Identifier '" + uLiteral.Value + "' not found")
+		// 	}
+		// 	return evaluateExpression(ref.Value(), scope)
+		case token.TRUE:
+			return 1
+		case token.FALSE:
+			return 0
+		default:
+			panic("evaluateUnaryExpr: Unknown type" + uLiteral.Value)
+		}*/
 }
 
 func evaluateBinaryExpr(ex ast.Expression, scope *ast.Scope) int {
 	be := ex.(ast.BinaryExpression)
+
 	a := evaluateExpression(be.Left, scope)
 	b := evaluateExpression(be.Right, scope)
 
@@ -115,7 +142,11 @@ func evaluateBinaryExpr(ex ast.Expression, scope *ast.Scope) int {
 	case token.DIV:
 		return divide(a, b)
 	}
-	return 0
+	fmt.Printf("%v\n", a)
+	fmt.Printf("%v\n", b)
+	fmt.Printf("%v\n", ex)
+	panic("Opsie dopsie")
+	//return 0
 }
 
 func evaluateExpression(ex ast.Expression, scope *ast.Scope) int {
@@ -127,6 +158,8 @@ func evaluateExpression(ex ast.Expression, scope *ast.Scope) int {
 		return evaluateBinaryExpr(ex, scope)
 	case ast.UnaryExpression:
 		return evaluateUnaryExpr(ex, scope)
+	default:
+		fmt.Printf("Unknown expression %v \n", ex)
 	}
 	return 0
 }
