@@ -225,13 +225,10 @@ func (p *Parser) parseBlockStatement() ast.BlockStatement {
 		Lbrace: p.curToken,
 	}
 	p.nextToken()
-	for !p.tokenIs(token.RBRACE) {
-		stmt := p.parseStatement()
-		if stmt != nil {
-			block.Statements = append(block.Statements, stmt)
-		}
-		p.nextToken()
-	}
+
+	statements := p.parseStatementList()
+	block.Statements = statements
+
 	block.Rbrace = p.curToken
 	p.expectTokenToBe(block.Rbrace)
 	return block
@@ -255,6 +252,16 @@ func (p *Parser) parseReturnStatement() ast.Statement {
 	p.nextToken()
 	stmt.ReturnVal = p.parseExpression(token.SEMICOLON)
 	return stmt
+}
+func (p *Parser) parseStatementList() (statements []ast.Statement) {
+	for p.curToken.Type != token.RBRACE && p.curToken.Type != token.EOF {
+		stmt := p.parseStatement()
+		if stmt != nil {
+			statements = append(statements, stmt)
+		}
+		p.nextToken()
+	}
+	return
 }
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
