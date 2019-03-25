@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"fmt"
+
 	"github.com/antonikliment/go-vtwin/ast"
 	"github.com/antonikliment/go-vtwin/lexer"
 	"github.com/antonikliment/go-vtwin/token"
@@ -61,7 +63,7 @@ func (p *Parser) parseParenExpr() ast.Expression {
 	for p.tokenIs(token.LPAREN) {
 		parenCounter++
 		pExpr.Lparen = p.curToken
-		p.nextToken()
+		p.expectTokenToBe(pExpr.Lparen)
 	}
 	pExpr.Expr = p.parseExpression(token.RPAREN)
 	for p.peekTokenIs(token.RPAREN) {
@@ -69,6 +71,7 @@ func (p *Parser) parseParenExpr() ast.Expression {
 		p.nextToken()
 	}
 	pExpr.Rparen = p.curToken
+	// p.expectTokenToBe(pExpr.Rparen)
 	parenCounter--
 	if parenCounter > 0 {
 		panic("Paren mismatch")
@@ -171,13 +174,13 @@ func (p *Parser) parseConstAssignment(ident *ast.Identifier, expr ast.Expression
 	}
 }
 
-func (p *Parser) parseFuncDecl() ast.Expression {
+func (p *Parser) parseFunction() ast.Function {
 	p.openScope()
 	if !p.tokenIs(token.LPAREN) {
 		panic("todo")
 	}
 	p.closeScope()
-	return nil
+	return ast.Function{}
 }
 func (p *Parser) parseAssignment() ast.Reference {
 	var immutable bool
@@ -219,19 +222,32 @@ func (p *Parser) parseAssignment() ast.Reference {
 }
 func (p *Parser) parseBlockStatement() ast.BlockStatement {
 	block := ast.BlockStatement{
-		Token: p.curToken,
+		Lbrace: p.curToken,
 	}
 	p.nextToken()
-	for !p.peekTokenIs(token.RBRACE) {
+	for !p.tokenIs(token.RBRACE) {
 		stmt := p.parseStatement()
 		if stmt != nil {
 			block.Statements = append(block.Statements, stmt)
 		}
 		p.nextToken()
 	}
+	block.Rbrace = p.curToken
+	p.expectTokenToBe(block.Rbrace)
 	return block
 }
 
+func (p *Parser) expectTokenToBe(tok token.Token) {
+	// pos := p.pos
+	if p.curToken != tok {
+		p.errorExpected("'" + tok.Literal + "'")
+	}
+	p.nextToken() // make progress
+	return        //pos
+}
+func (p *Parser) errorExpected(str string) {
+	fmt.Printf("%v\n", str)
+}
 func (p *Parser) parseReturnStatement() ast.Statement {
 	stmt := ast.ReturnStatement{
 		Token: p.curToken,
@@ -245,7 +261,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.LET, token.CONST: //, token.IDENT:
 		return p.parseAssignment()
 	case token.FUNCTION:
-		return p.parseFuncDecl()
+		return p.parseFunction()
 	case token.RETURN:
 		return p.parseReturnStatement()
 	case token.LBRACE:

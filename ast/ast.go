@@ -48,12 +48,17 @@ type ExpressionStatement struct {
 	Expr  Expression
 }
 type BlockStatement struct {
-	Token      token.Token // the { token
 	Statements []Statement
+	Lbrace     token.Token
+	Rbrace     token.Token
 }
 type ReturnStatement struct {
 	Token     token.Token // RETURN token
 	ReturnVal Expression
+}
+type Function struct {
+	Name *Identifier
+	Body *BlockStatement
 }
 type Scope struct {
 	Outer   *Scope

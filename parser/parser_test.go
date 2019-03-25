@@ -141,7 +141,7 @@ func TestBlockStatement(t *testing.T) {
 	input := `{
 		const test <- 3;
 		let out <- 6 - test;
-		return out + 1;;
+		return out + 1;
 	}
 	` // TODO FIX SEMICOLON
 	statements, scope := parseInput(input + ";")
