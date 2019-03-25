@@ -8,6 +8,7 @@ import (
 
 type Expression interface {
 	exprNode()
+	String() string
 }
 
 type SimpleLiteral struct {
@@ -20,8 +21,14 @@ type ParenExpression struct {
 	Rparen token.Token
 }
 
+func (e SimpleLiteral) String() string {
+	return e.Value
+}
 func (e SimpleLiteral) exprNode()   {}
 func (e ParenExpression) exprNode() {}
+func (e ParenExpression) String() string {
+	return ""
+}
 
 type UnaryExpression struct {
 	Operator token.Token
@@ -32,7 +39,7 @@ type UnaryExpression struct {
 func (e UnaryExpression) exprNode() {}
 
 func (nd UnaryExpression) String() string {
-	return "nd.Operand."
+	return nd.Operand.String()
 }
 
 type BinaryExpression struct {
@@ -42,6 +49,9 @@ type BinaryExpression struct {
 }
 
 func (e BinaryExpression) exprNode() {}
+func (e BinaryExpression) String() string {
+	return e.Left.String() + e.Operator.Literal + e.Right.String()
+}
 
 type Identifier struct {
 	Token token.Token // the token.IDENT token
