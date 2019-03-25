@@ -10,23 +10,29 @@ type Expression interface {
 	exprNode()
 }
 
+type SimpleLiteral struct {
+	Type  token.Type
+	Value string
+}
 type ParenExpression struct {
 	Lparen token.Token
 	Expr   Expression
 	Rparen token.Token
 }
 
+func (e SimpleLiteral) exprNode()   {}
 func (e ParenExpression) exprNode() {}
 
 type UnaryExpression struct {
 	Operator token.Token
-	Operand  token.Token
+	Operand  Expression //token.Token
+	// Expr     Expression
 }
 
 func (e UnaryExpression) exprNode() {}
 
 func (nd UnaryExpression) String() string {
-	return nd.Operand.Literal
+	return "nd.Operand."
 }
 
 type BinaryExpression struct {
@@ -36,6 +42,14 @@ type BinaryExpression struct {
 }
 
 func (e BinaryExpression) exprNode() {}
+
+type Identifier struct {
+	Token token.Token // the token.IDENT token
+	Expr  Expression
+	Value string
+}
+
+func (e Identifier) exprNode() {}
 
 /*
 	Moves the old expression to the left BinaryExpression

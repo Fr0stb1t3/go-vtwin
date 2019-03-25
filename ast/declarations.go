@@ -5,10 +5,6 @@ import "github.com/antonikliment/go-vtwin/token"
 type Reference interface {
 	Value() Expression
 }
-type Identifier struct {
-	Token token.Token // the token.IDENT token
-	Value string
-}
 
 type Function struct {
 	Name *Identifier
