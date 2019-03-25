@@ -110,7 +110,7 @@ func printExpressionStatement(stmt ast.Statement) {
 func TestLetAssignment(t *testing.T) {
 	input := `const test <- 1;
 						let two <- 1+2;
-						let three <- test+two++1;
+						let three <- test+two+1;
 						three <- 3;
 						let four <- true;
 	`

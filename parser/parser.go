@@ -62,7 +62,7 @@ func (p *Parser) parseOperand() ast.Expression {
 		}
 		return x
 	default:
-		fmt.Printf("%v \n", p.curToken)
+		fmt.Printf("DEFAULT OPERAND %v \n", p.curToken)
 		// p.nextToken()
 	}
 	return nil
@@ -85,6 +85,7 @@ func (p *Parser) parseUnaryExpr() ast.Expression {
 		}
 	}
 	expr := p.parseOperand()
+
 	return ast.UnaryExpression{
 		Operator: operator,
 		Operand:  expr,
@@ -172,8 +173,10 @@ func (p *Parser) parseBinaryExpr(endToken token.Type) ast.Expression {
 func (p *Parser) parseExpression(endToken token.Type) ast.Expression {
 	switch {
 	case p.tokenIs(token.LPAREN), p.peekToken.Type.IsOpertor():
+		// fmt.Printf("Default parseBinaryExpr %v \n", p.curToken)
 		return p.parseBinaryExpr(endToken)
 	default:
+		// fmt.Printf("Default assignment %v \n", p.curToken)
 		return p.parseUnaryExpr()
 	}
 }
@@ -228,6 +231,7 @@ func (p *Parser) parseConstAssignment(ident *ast.Identifier, expr ast.Expression
 func (p *Parser) parseFunction() ast.Function {
 	p.nextToken()
 	ident := p.parseIdentifier()
+	p.nextToken()
 	// p.TopScope.Objects[ident.Value] = ident
 	p.expectTokenToBe(token.LPAREN)
 
@@ -250,7 +254,7 @@ func (p *Parser) parseIdentifier() *ast.Identifier {
 	tok := p.curToken
 	if p.curToken.Type == token.IDENT {
 		name = p.curToken.Literal
-		p.nextToken()
+		// p.nextToken()
 	} /*  else {
 		p.expect(token.IDENT) // use expect() error handling
 	}*/
@@ -275,6 +279,7 @@ func (p *Parser) parseAssignment() ast.Reference {
 
 	if p.tokenIs(token.IDENT) {
 		ident = p.parseIdentifier()
+		p.nextToken()
 	}
 	if !p.tokenIs(token.ASSIGN) {
 		panic("Invalid Let assignment" + p.peekToken.Literal)
