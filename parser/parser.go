@@ -296,27 +296,27 @@ func (p *Parser) parseStatementList() (statements []ast.Statement) {
 	}
 	return
 }
-func (p *Parser) parseStatement() ast.Statement {
+func (p *Parser) parseStatement() (stmt ast.Statement) {
 	switch p.curToken.Type {
 	case token.LET, token.CONST: //, token.IDENT:
-		return p.parseAssignment()
+		stmt = p.parseAssignment()
 	case token.FUNCTION:
-		return p.parseFunction()
+		stmt = p.parseFunction()
 	case token.RETURN:
-		return p.parseReturnStatement()
+		stmt = p.parseReturnStatement()
 	case token.LBRACE:
-		return p.parseBlockStatement()
+		stmt = p.parseBlockStatement()
 	case token.IDENT:
-		return p.parseAssignment()
+		stmt = p.parseAssignment()
 	case token.LPAREN, token.INT:
 		start := p.curToken
 		expression := p.parseExpression(token.SEMICOLON)
-		return ast.ExpressionStatement{
+		stmt = ast.ExpressionStatement{
 			Token: start,
 			Expr:  expression,
 		}
 	}
-	return nil
+	return
 }
 
 func (p *Parser) ParseProgram() *ast.Program {
