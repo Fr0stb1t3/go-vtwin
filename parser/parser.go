@@ -177,6 +177,7 @@ func (p *Parser) parseConstAssignment(ident *ast.Identifier, expr ast.Expression
 func (p *Parser) parseFunction() ast.Function {
 	p.nextToken()
 	ident := p.parseIdentifier()
+	// p.TopScope.Objects[ident.Value] = ident
 	p.expectTokenToBe(token.LPAREN)
 
 	p.expectTokenToBe(token.RPAREN)
@@ -185,10 +186,13 @@ func (p *Parser) parseFunction() ast.Function {
 	body := p.parseBlockStatement()
 	p.closeScope()
 
-	return ast.Function{
+	fun := ast.Function{
 		Name: ident,
 		Body: &body,
 	}
+	p.TopScope.Objects[ident.Value] = &fun
+	// Delcare func in
+	return fun
 }
 func (p *Parser) parseIdentifier() *ast.Identifier {
 	//pos := p.pos
@@ -239,6 +243,14 @@ func (p *Parser) parseAssignment() ast.Reference {
 	return assignment
 
 }
+
+/*
+func declare(decl, scope *ast.Scope, declType, identifiers ...*ast.Identifier) {
+	for _, ident := range identifiers {
+		obj = ast.New
+	}
+}
+*/
 func (p *Parser) parseBlockStatement() ast.BlockStatement {
 	block := ast.BlockStatement{
 		Lbrace: p.curToken,
