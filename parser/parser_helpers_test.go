@@ -79,17 +79,16 @@ func divide(A int, B int) int {
 	return A / B
 }
 
-// func evaluateSimpleLiteral(ex ast.Expression, scope *ast.Scope) int {
-// 	uax := ex.(ast.UnaryExpression)
-// }
 func evaluateUnaryExpr(ex ast.Expression, scope *ast.Scope) int {
 	uax := ex.(ast.UnaryExpression)
 	switch uax.Operand.(type) {
 	case *ast.SimpleLiteral:
 		simple := uax.Operand.(*ast.SimpleLiteral)
+		if simple.Value == "true" { // TODO simplify this
+			val, _ := strconv.Atoi(uax.Operator.Literal + "1")
+			return val
+		}
 		val, _ := strconv.Atoi(uax.Operator.Literal + simple.Value)
-
-		// fmt.Printf("Val: %v\n", val)
 		return val
 	case *ast.Identifier:
 		ident := uax.Operand.(*ast.Identifier)
@@ -142,9 +141,10 @@ func evaluateBinaryExpr(ex ast.Expression, scope *ast.Scope) int {
 	case token.DIV:
 		return divide(a, b)
 	}
-	fmt.Printf("%v\n", a)
-	fmt.Printf("%v\n", b)
-	fmt.Printf("%v\n", ex)
+
+	fmt.Printf("%v\n", be)
+	fmt.Printf("%v\n", be.Left)
+	fmt.Printf("%v\n", be.Right)
 	panic("Opsie dopsie")
 	//return 0
 }
@@ -161,7 +161,7 @@ func evaluateExpression(ex ast.Expression, scope *ast.Scope) int {
 	default:
 		fmt.Printf("Unknown expression %v \n", ex)
 	}
-	return 0
+	return -1
 }
 
 type result struct {

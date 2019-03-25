@@ -49,7 +49,13 @@ func (p *Parser) parseOperand() ast.Expression {
 		x := p.parseIdentifier()
 		p.resolve(x)
 		return x
-	case token.INT, token.FLOAT, token.CHAR, token.STRING, token.TRUE, token.FALSE:
+	case token.INT, token.FLOAT, token.CHAR, token.STRING:
+		x := &ast.SimpleLiteral{
+			Type:  p.curToken.Type,
+			Value: p.curToken.Literal,
+		}
+		return x
+	case token.TRUE, token.FALSE:
 		x := &ast.SimpleLiteral{
 			Type:  p.curToken.Type,
 			Value: p.curToken.Literal,
@@ -72,7 +78,7 @@ func (p *Parser) parseUnaryExpr() ast.Expression {
 		operator = p.curToken
 		p.nextToken()
 		expr := p.parseOperand()
-		fmt.Printf("parseIdent %v \n", expr)
+
 		return ast.UnaryExpression{
 			Operator: operator,
 			Operand:  expr,
@@ -198,7 +204,6 @@ func (p *Parser) resolve(ex ast.Expression) {
 	for s := p.TopScope; s != nil; s = s.Outer {
 		if obj := s.Lookup(ident.Value); obj != nil {
 
-			// fmt.Printf("Resolve: %v \n", obj)
 			ident.Expr = obj.Value()
 			return
 		}
@@ -241,7 +246,6 @@ func (p *Parser) parseFunction() ast.Function {
 	return fun
 }
 func (p *Parser) parseIdentifier() *ast.Identifier {
-	//pos := p.pos
 	name := "_"
 	tok := p.curToken
 	if p.curToken.Type == token.IDENT {
