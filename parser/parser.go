@@ -136,16 +136,13 @@ func (p *Parser) parseBinaryExpr(precInput int) ast.Expression {
 			p.nextToken()
 			continue
 		}
-
-		if expression.Left == nil {
+		if !p.curToken.Type.IsOpertor() {
 			expr := p.parseUnaryExpr()
-			expression.Left = expr
-			p.nextToken()
-			continue
-		} else if expression.Right == nil && !p.curToken.Type.IsOpertor() {
-			// fmt.Printf("pre: %v \n ", expression)
-			expr := p.parseUnaryExpr()
-			expression.Right = expr
+			if expression.Left == nil {
+				expression.Left = expr
+			} else {
+				expression.Right = expr
+			}
 			p.nextToken()
 			continue
 		}
