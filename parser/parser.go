@@ -136,13 +136,18 @@ func (p *Parser) parseBinaryExpr(precInput int) ast.Expression {
 			p.nextToken()
 			continue
 		}
+
 		if expression.Left == nil {
 			expr := p.parseUnaryExpr()
 			expression.Left = expr
 			p.nextToken()
 			continue
-		} else if expression.Right == nil {
+		} else if expression.Right == nil && !p.curToken.Type.IsOpertor() {
 			// fmt.Printf("pre: %v \n ", expression)
+			expr := p.parseUnaryExpr()
+			expression.Right = expr
+			p.nextToken()
+			continue
 		}
 
 		if expression.CompleteNode() {
@@ -173,11 +178,6 @@ func (p *Parser) parseBinaryExpr(precInput int) ast.Expression {
 			p.nextToken()
 			continue
 		}
-		expr := p.parseUnaryExpr()
-		expression.Right = expr
-		// expression.AddSubnode(expr)
-
-		p.nextToken()
 	}
 	// Resolve any dangling expressions
 	if lowPrecedenceExpr.Left != nil {

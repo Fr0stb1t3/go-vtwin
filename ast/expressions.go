@@ -73,25 +73,7 @@ func (e Identifier) exprNode() {}
 /*
 	Moves the old expression to the left BinaryExpression
 */
-// func (e *BinaryExpression) ShiftNode() BinaryExpression {
-// 	expr := *e
-// 	return BinaryExpression{
-// 		Left: expr,
-// 	}
-// }
-// func (e *BinaryExpression) UnshiftNode() BinaryExpression {
-//
-// 	return BinaryExpression{
-// 		Operator: token.Token{},
-// 		Left:     e.Right,
-// 		Right:    nil,
-// 	}
-// }
-func (e *BinaryExpression) emptyNode() bool {
-	return e.Left == nil &&
-		e.Operator == token.Token{} &&
-		e.Right == nil
-}
+
 func (e *BinaryExpression) CompleteNode() bool {
 	return e.Left != nil &&
 		e.Operator != token.Token{} &&
