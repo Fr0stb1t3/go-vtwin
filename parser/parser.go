@@ -60,7 +60,7 @@ func (p *Parser) parseOperand() ast.Expression {
 			Value: p.curToken.Literal,
 		}
 	}
-	panic("parseOperand failed" + p.curToken.Literal)
+	panic("parseOperand failed: [ " + p.curToken.Literal + " ]")
 }
 
 func (p *Parser) parseUnaryExpr() ast.Expression {
@@ -129,30 +129,53 @@ func (p *Parser) parseBinaryExpr(precInput int) ast.Expression {
 	lowPrecedenceExpr := ast.BinaryExpression{}
 	for !p.tokenIs(token.SEMICOLON) && !p.tokenIs(token.RPAREN) {
 		tok, prec := p.Precedence()
+
+		if p.tokenIs(token.LPAREN) {
+			expr := p.parseParenExpr()
+			expression.AddSubnode(expr)
+			p.nextToken()
+			continue
+		}
+		if expression.Left == nil {
+			expr := p.parseUnaryExpr()
+			expression.Left = expr
+			p.nextToken()
+			continue
+		} else if expression.Right == nil {
+			// fmt.Printf("pre: %v \n ", expression)
+		}
+
 		if expression.CompleteNode() {
 			if prec > expression.Operator.Type.Precedence() {
 				lowPrecedenceExpr.Left = expression.Left
 				lowPrecedenceExpr.Operator = expression.Operator
-				expression = expression.UnshiftNode()
+				expression = ast.BinaryExpression{
+					Operator: token.Token{},
+					Left:     expression.Right,
+					Right:    nil,
+				}
+				/*	UnshiftNode */
 			} else if prec <= lowPrecedenceExpr.Operator.Type.Precedence() {
 				lowPrecedenceExpr.Right = expression
 				expression = lowPrecedenceExpr
 				lowPrecedenceExpr = ast.BinaryExpression{}
-				expression = expression.ShiftNode()
+				expression = ast.BinaryExpression{
+					Left: expression,
+				}
 			} else {
-				expression = expression.ShiftNode()
+				expression = ast.BinaryExpression{
+					Left: expression,
+				}
 			}
 		}
-		switch {
-		case p.curToken.Type.IsOpertor():
+		if p.curToken.Type.IsOpertor() {
 			expression.Operator = tok
-		case p.tokenIs(token.LPAREN):
-			expr := p.parseParenExpr()
-			expression.AddSubnode(expr)
-		default:
-			expr := p.parseUnaryExpr()
-			expression.AddSubnode(expr)
+			p.nextToken()
+			continue
 		}
+		expr := p.parseUnaryExpr()
+		expression.Right = expr
+		// expression.AddSubnode(expr)
 
 		p.nextToken()
 	}
@@ -166,6 +189,8 @@ func (p *Parser) parseBinaryExpr(precInput int) ast.Expression {
 
 func (p *Parser) parseExpression() ast.Expression {
 	switch {
+	// case p.tokenIs(token.LPAREN):
+	// 	return p.parseParenExpr()
 	case p.tokenIs(token.LPAREN), p.peekToken.Type.IsOpertor():
 		// fmt.Printf("Default parseBinaryExpr %v \n", p.curToken)
 		return p.parseBinaryExpr(token.LowestPrec + 1)

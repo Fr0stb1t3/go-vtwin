@@ -138,7 +138,7 @@ func evaluateBinaryExpr(ex ast.Expression, scope *ast.Scope) int {
 		return divide(a, b)
 	}
 
-	fmt.Printf("%v\n", be)
+	fmt.Printf("BE: %v\n", be)
 	fmt.Printf("%v\n", be.Left)
 	fmt.Printf("%v\n", be.Right)
 	panic("Opsie dopsie")
