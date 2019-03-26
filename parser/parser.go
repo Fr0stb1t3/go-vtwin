@@ -50,25 +50,17 @@ func (p *Parser) parseOperand() ast.Expression {
 		p.resolve(x)
 		return x
 	case token.INT, token.FLOAT, token.CHAR, token.STRING:
-		x := &ast.SimpleLiteral{
+		return &ast.SimpleLiteral{
 			Type:  p.curToken.Type,
 			Value: p.curToken.Literal,
 		}
-		return x
 	case token.TRUE, token.FALSE:
-		x := &ast.SimpleLiteral{
+		return &ast.SimpleLiteral{
 			Type:  p.curToken.Type,
 			Value: p.curToken.Literal,
 		}
-		return x
-	default:
-		fmt.Printf("DEFAULT OPERAND %v \n", p.curToken)
-		// p.nextToken()
 	}
-	return nil
-}
-func (p *Parser) parsePrimaryExpression() ast.Expression {
-	return nil
+	panic("parseOperand failed" + p.curToken.Literal)
 }
 
 func (p *Parser) parseUnaryExpr() ast.Expression {
@@ -77,12 +69,6 @@ func (p *Parser) parseUnaryExpr() ast.Expression {
 	case token.ADD, token.SUBT, token.NOT, token.XOR, token.AND:
 		operator = p.curToken
 		p.nextToken()
-		expr := p.parseOperand()
-
-		return ast.UnaryExpression{
-			Operator: operator,
-			Operand:  expr,
-		}
 	}
 	expr := p.parseOperand()
 
@@ -106,7 +92,7 @@ func (p *Parser) parseParenExpr() ast.Expression {
 		p.nextToken()
 	}
 	pExpr.Rparen = p.curToken
-	// p.expectTokenToBe(pExpr.Rparen)
+
 	parenCounter--
 	if parenCounter > 0 {
 		panic("Paren mismatch")
@@ -125,7 +111,19 @@ func (p *Parser) parseParenExpr() ast.Expression {
 			If there are more tokens left shift the previous expresion as a left node and continue
 			else return the expression
 */
-
+/*
+func (p *Parser) parseBinaryExprAlt(precInput int) ast.Expression {
+	left := p.parseUnaryExpr()
+	for {
+		operator, prec := p.Precedence()
+		fmt.Printf("%v\n", operator)
+		if prec < precInput {
+			return left
+		}
+		right := p.parseBinaryExprAlt(prec + 1)
+		left = ast.BinaryExpression{Left: left, Operator: operator, Right: right}
+	}
+}*/
 func (p *Parser) parseBinaryExpr(precInput int) ast.Expression {
 	expression := ast.BinaryExpression{}
 	lowPrecedenceExpr := ast.BinaryExpression{}
@@ -228,7 +226,7 @@ func (p *Parser) parseFunction() ast.Function {
 	p.nextToken()
 	ident := p.parseIdentifier()
 	p.nextToken()
-	// p.TopScope.Objects[ident.Value] = ident
+
 	p.expectTokenToBe(token.LPAREN)
 
 	p.expectTokenToBe(token.RPAREN)

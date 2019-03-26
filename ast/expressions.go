@@ -97,6 +97,6 @@ func (e *BinaryExpression) AddSubnode(subEx Expression) {
 		e.Right = subEx
 		return
 	}
-	fmt.Printf("\n %v", e)
+	fmt.Printf("Sub fail :%v \n", e)
 	panic("BinaryExpression node is full")
 }

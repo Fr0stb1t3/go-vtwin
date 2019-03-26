@@ -3,7 +3,7 @@ package ast
 import "github.com/antonikliment/go-vtwin/token"
 
 type Statement interface {
-	// stmtNode()
+	// stmtNode() // FIXME
 }
 
 type AssignmentStatement struct {

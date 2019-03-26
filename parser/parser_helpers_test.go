@@ -178,6 +178,7 @@ func runStatements(stmts []ast.Statement, scope *ast.Scope) result {
 }
 
 func runStatement(stmt ast.Statement, scope *ast.Scope) result {
+	// fmt.Printf("%v\n", stmt)
 	switch stmt.(type) {
 	case ast.ExpressionStatement:
 		es := stmt.(ast.ExpressionStatement)

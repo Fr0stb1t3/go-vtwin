@@ -102,6 +102,7 @@ func TestRandomLoopSet(t *testing.T) {
 		count++
 	}
 }
+
 */
 func printExpressionStatement(stmt ast.Statement) {
 	fmt.Printf("\n%v \n", stmt)
@@ -170,4 +171,4 @@ func TestFuncBlock(t *testing.T) {
 
 	runStatements(statements, scope)
 	// assertEqual(t, res.number, 1, "const test <- 1")
-}
+} /**/
