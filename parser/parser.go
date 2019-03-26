@@ -130,14 +130,14 @@ func (p *Parser) parseBinaryExpr(precInput int) ast.Expression {
 	for !p.tokenIs(token.SEMICOLON) && !p.tokenIs(token.RPAREN) {
 		tok, prec := p.Precedence()
 
-		if p.tokenIs(token.LPAREN) {
-			expr := p.parseParenExpr()
-			expression.AddSubnode(expr)
-			p.nextToken()
-			continue
-		}
 		if !p.curToken.Type.IsOpertor() {
-			expr := p.parseUnaryExpr()
+			var expr ast.Expression
+			if p.tokenIs(token.LPAREN) {
+				expr = p.parseParenExpr()
+			} else {
+				expr = p.parseUnaryExpr()
+			}
+
 			if expression.Left == nil {
 				expression.Left = expr
 			} else {
@@ -145,35 +145,29 @@ func (p *Parser) parseBinaryExpr(precInput int) ast.Expression {
 			}
 			p.nextToken()
 			continue
-		}
-
-		if expression.CompleteNode() {
-			if prec > expression.Operator.Type.Precedence() {
-				lowPrecedenceExpr.Left = expression.Left
-				lowPrecedenceExpr.Operator = expression.Operator
-				expression = ast.BinaryExpression{
-					Operator: token.Token{},
-					Left:     expression.Right,
-					Right:    nil,
-				}
-				/*	UnshiftNode */
-			} else if prec <= lowPrecedenceExpr.Operator.Type.Precedence() {
-				lowPrecedenceExpr.Right = expression
-				expression = lowPrecedenceExpr
-				lowPrecedenceExpr = ast.BinaryExpression{}
-				expression = ast.BinaryExpression{
-					Left: expression,
-				}
-			} else {
-				expression = ast.BinaryExpression{
-					Left: expression,
-				}
-			}
-		}
-		if p.curToken.Type.IsOpertor() {
+		} else if !expression.CompleteNode() {
 			expression.Operator = tok
 			p.nextToken()
 			continue
+		}
+		if prec > expression.Operator.Type.Precedence() {
+			lowPrecedenceExpr.Left = expression.Left
+			lowPrecedenceExpr.Operator = expression.Operator
+			expression = ast.BinaryExpression{
+				Operator: token.Token{},
+				Left:     expression.Right,
+				Right:    nil,
+			}
+			continue
+		}
+
+		if prec <= lowPrecedenceExpr.Operator.Type.Precedence() {
+			lowPrecedenceExpr.Right = expression
+			expression = lowPrecedenceExpr
+			lowPrecedenceExpr = ast.BinaryExpression{}
+		}
+		expression = ast.BinaryExpression{
+			Left: expression,
 		}
 	}
 	// Resolve any dangling expressions
