@@ -50,15 +50,15 @@ type BinaryExpression struct {
 
 func (e BinaryExpression) exprNode() {}
 func (e BinaryExpression) String() string {
-	out := ""
+	out := "<"
 	if e.Left != nil {
-		out += e.Left.String()
+		out += "L: " + e.Left.String()
 	}
 	out += e.Operator.Literal
 	if e.Right != nil {
-		out += e.Right.String()
+		out += "R: " + e.Right.String()
 	}
-	return out
+	return out + ">"
 	// return e.Left.String() + e.Operator.Literal + e.Right.String()
 }
 

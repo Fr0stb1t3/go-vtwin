@@ -122,7 +122,7 @@ func evaluateUnaryExpr(ex ast.Expression, scope *ast.Scope) int {
 }
 
 func evaluateBinaryExpr(ex ast.Expression, scope *ast.Scope) int {
-	be := ex.(ast.BinaryExpression)
+	be := ex.(*ast.BinaryExpression)
 
 	a := evaluateExpression(be.Left, scope)
 	b := evaluateExpression(be.Right, scope)
@@ -152,8 +152,12 @@ func evaluateExpression(ex ast.Expression, scope *ast.Scope) int {
 		return evaluateExpression(pex.Expr, scope)
 	case ast.BinaryExpression:
 		return evaluateBinaryExpr(ex, scope)
+	case *ast.BinaryExpression:
+		return evaluateBinaryExpr(ex, scope)
 	case ast.UnaryExpression:
 		return evaluateUnaryExpr(ex, scope)
+	// case ast.SimpleLiteral:
+	// 	return 0
 	default:
 		fmt.Printf("Unknown expression %v \n", ex)
 	}

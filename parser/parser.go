@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/antonikliment/go-vtwin/ast"
 	"github.com/antonikliment/go-vtwin/lexer"
@@ -44,6 +45,7 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 func (p *Parser) parseOperand() ast.Expression {
+	// fmt.Printf("%v\n", p.curToken)
 	switch p.curToken.Type {
 	case token.IDENT:
 		x := p.parseIdentifier()
@@ -60,6 +62,7 @@ func (p *Parser) parseOperand() ast.Expression {
 			Value: p.curToken.Literal,
 		}
 	}
+	// return nil
 	panic("parseOperand failed: [ " + p.curToken.Literal + " ]")
 }
 
@@ -71,7 +74,6 @@ func (p *Parser) parseUnaryExpr() ast.Expression {
 		p.nextToken()
 	}
 	expr := p.parseOperand()
-
 	return ast.UnaryExpression{
 		Operator: operator,
 		Operand:  expr,
@@ -95,87 +97,34 @@ func (p *Parser) parseParenExpr() ast.Expression {
 
 	parenCounter--
 	if parenCounter > 0 {
-		panic("Paren mismatch")
+		panic("Paren mismatch" + strconv.Itoa(parenCounter))
 	}
 
 	return pExpr
 }
 
-/*
- parseBinaryExpr starts constructing the AOL tree from the bottom left.
- Create ast.Expression
-	While there are tokens to be read
-		Set the operator to the operator Value
-		Set Identifiers or Ints to the branches of the ast.Expression
-		When the node is full:
-			If there are more tokens left shift the previous expresion as a left node and continue
-			else return the expression
-*/
-/*
-func (p *Parser) parseBinaryExprAlt(precInput int) ast.Expression {
-	left := p.parseUnaryExpr()
+func (p *Parser) parseBinaryExpression(precInput int) (expression ast.Expression) {
+	if p.tokenIs(token.LPAREN) {
+		p.nextToken()
+		expression = p.parseParenExpr()
+	} else {
+		expression = p.parseUnaryExpr()
+	}
+
+	p.nextToken()
 	for {
-		operator, prec := p.Precedence()
-		fmt.Printf("%v\n", operator)
-		if prec < precInput {
-			return left
+		tok, oprec := p.Precedence()
+		if oprec < precInput {
+			return expression
 		}
-		right := p.parseBinaryExprAlt(prec + 1)
-		left = ast.BinaryExpression{Left: left, Operator: operator, Right: right}
-	}
-}*/
-func (p *Parser) parseBinaryExpr(precInput int) ast.Expression {
-	expression := ast.BinaryExpression{}
-	lowPrecedenceExpr := ast.BinaryExpression{}
-	for !p.tokenIs(token.SEMICOLON) && !p.tokenIs(token.RPAREN) {
-		tok, prec := p.Precedence()
-
-		if !p.curToken.Type.IsOpertor() {
-			var expr ast.Expression
-			if p.tokenIs(token.LPAREN) {
-				expr = p.parseParenExpr()
-			} else {
-				expr = p.parseUnaryExpr()
-			}
-
-			if expression.Left == nil {
-				expression.Left = expr
-			} else {
-				expression.Right = expr
-			}
-			p.nextToken()
-			continue
-		} else if !expression.CompleteNode() {
-			expression.Operator = tok
-			p.nextToken()
-			continue
-		}
-		if prec > expression.Operator.Type.Precedence() {
-			lowPrecedenceExpr.Left = expression.Left
-			lowPrecedenceExpr.Operator = expression.Operator
-			expression = ast.BinaryExpression{
-				Operator: token.Token{},
-				Left:     expression.Right,
-				Right:    nil,
-			}
-			continue
-		}
-
-		if prec <= lowPrecedenceExpr.Operator.Type.Precedence() {
-			lowPrecedenceExpr.Right = expression
-			expression = lowPrecedenceExpr
-			lowPrecedenceExpr = ast.BinaryExpression{}
-		}
-		expression = ast.BinaryExpression{
-			Left: expression,
+		p.nextToken()
+		right := p.parseBinaryExpression(oprec + 1)
+		expression = &ast.BinaryExpression{
+			Left:     expression,
+			Operator: tok,
+			Right:    right,
 		}
 	}
-	// Resolve any dangling expressions
-	if lowPrecedenceExpr.Left != nil {
-		lowPrecedenceExpr.Right = expression
-		expression = lowPrecedenceExpr
-	}
-	return expression
 }
 
 func (p *Parser) parseExpression() ast.Expression {
@@ -183,10 +132,8 @@ func (p *Parser) parseExpression() ast.Expression {
 	// case p.tokenIs(token.LPAREN):
 	// 	return p.parseParenExpr()
 	case p.tokenIs(token.LPAREN), p.peekToken.Type.IsOpertor():
-		// fmt.Printf("Default parseBinaryExpr %v \n", p.curToken)
-		return p.parseBinaryExpr(token.LowestPrec + 1)
+		return p.parseBinaryExpression(token.LowestPrec + 1)
 	default:
-		// fmt.Printf("Default assignment %v \n", p.curToken)
 		return p.parseUnaryExpr()
 	}
 }

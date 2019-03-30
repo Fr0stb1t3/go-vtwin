@@ -24,7 +24,6 @@ func TestBasicMathTrees(t *testing.T) {
 						1+2*4+5;
 	`
 	statements, scope := parseInput(input)
-
 	res := runStatement(statements[0], scope)
 	resPrecedence := runStatement(statements[1], scope)
 	resPrecedenceTwo := runStatement(statements[2], scope)
@@ -32,7 +31,6 @@ func TestBasicMathTrees(t *testing.T) {
 	assertEqual(t, resPrecedence.number, 23, "")
 	assertEqual(t, resPrecedenceTwo.number, 14, "")
 }
-
 func TestBraces(t *testing.T) {
 	input := `
 		(2+1)*(4+5);
@@ -94,16 +92,6 @@ func randomExpressionTest(t *testing.T) {
 	assertEqual(t, res.number, result, input)
 }
 
-/*
-func TestRandomLoopSet(t *testing.T) {
-	count := 1
-	for count < 10000 {
-		randomExpressionTest(t)
-		count++
-	}
-}
-
-*/
 func printExpressionStatement(stmt ast.Statement) {
 	fmt.Printf("\n%v \n", stmt)
 }
@@ -151,8 +139,6 @@ func TestBlockStatement(t *testing.T) {
 	assertEqual(t, res.number, 4, "const test <- 1")
 }
 
-/*
- */
 func TestConditionStatement(t *testing.T) {
 
 }
@@ -172,3 +158,14 @@ func TestFuncBlock(t *testing.T) {
 	runStatements(statements, scope)
 	// assertEqual(t, res.number, 1, "const test <- 1")
 } /**/
+
+/*
+func TestRandomLoopSet(t *testing.T) {
+	count := 1
+	for count < 10000 {
+		randomExpressionTest(t)
+		count++
+	}
+}
+
+*/
