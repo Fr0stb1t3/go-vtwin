@@ -15,6 +15,7 @@ type SimpleLiteral struct {
 	Type  token.Type
 	Value string
 }
+
 type ParenExpression struct {
 	Lparen token.Token
 	Expr   Expression
