@@ -156,8 +156,7 @@ func TestFuncBlock(t *testing.T) {
 	statements, scope := parseInput(input + ";")
 
 	runStatements(statements, scope)
-	// assertEqual(t, res.number, 1, "const test <- 1")
-} /**/
+}
 
 /*
 func TestRandomLoopSet(t *testing.T) {

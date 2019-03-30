@@ -74,7 +74,7 @@ func (p *Parser) parseUnaryExpr() ast.Expression {
 		p.nextToken()
 	}
 	expr := p.parseOperand()
-	return ast.UnaryExpression{
+	return &ast.UnaryExpression{
 		Operator: operator,
 		Operand:  expr,
 	}
@@ -82,7 +82,7 @@ func (p *Parser) parseUnaryExpr() ast.Expression {
 
 func (p *Parser) parseParenExpr() ast.Expression {
 	var parenCounter int
-	pExpr := ast.ParenExpression{}
+	pExpr := &ast.ParenExpression{}
 	for p.tokenIs(token.LPAREN) {
 		parenCounter++
 		pExpr.Lparen = p.curToken
@@ -309,12 +309,7 @@ func (p *Parser) parseStatementList() (statements []ast.Statement) {
 	}
 	return
 }
-func (p *Parser) parseSimpleExpression() (exprStmt ast.ExpressionStatement) {
-	// expression := p.parseAssignment()
-	// expr = ast.ExpressionStatement{}
-	//	exprStmt.Expr = expression
-	return
-}
+
 func (p *Parser) parseStatement() (stmt ast.Statement) {
 	switch p.curToken.Type {
 	case token.LET, token.CONST: //, token.IDENT:

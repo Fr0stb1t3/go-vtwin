@@ -80,7 +80,7 @@ func divide(A int, B int) int {
 }
 
 func evaluateUnaryExpr(ex ast.Expression, scope *ast.Scope) int {
-	uax := ex.(ast.UnaryExpression)
+	uax := ex.(*ast.UnaryExpression)
 	switch uax.Operand.(type) {
 	case *ast.SimpleLiteral:
 		simple := uax.Operand.(*ast.SimpleLiteral)
@@ -147,17 +147,15 @@ func evaluateBinaryExpr(ex ast.Expression, scope *ast.Scope) int {
 
 func evaluateExpression(ex ast.Expression, scope *ast.Scope) int {
 	switch ex.(type) {
-	case ast.ParenExpression:
-		pex := ex.(ast.ParenExpression)
+	case *ast.ParenExpression:
+		pex := ex.(*ast.ParenExpression)
 		return evaluateExpression(pex.Expr, scope)
 	case ast.BinaryExpression:
 		return evaluateBinaryExpr(ex, scope)
 	case *ast.BinaryExpression:
 		return evaluateBinaryExpr(ex, scope)
-	case ast.UnaryExpression:
+	case *ast.UnaryExpression:
 		return evaluateUnaryExpr(ex, scope)
-	// case ast.SimpleLiteral:
-	// 	return 0
 	default:
 		fmt.Printf("Unknown expression %v \n", ex)
 	}
