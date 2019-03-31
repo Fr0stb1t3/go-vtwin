@@ -151,8 +151,8 @@ func TestFuncBlock(t *testing.T) {
 	func returnSomething() {
 		return 1;
 	};
-
-	` //let A <- returnSomething();
+	let A <- returnSomething();
+	`
 	statements, scope := parseInput(input + ";")
 
 	runStatements(statements, scope)

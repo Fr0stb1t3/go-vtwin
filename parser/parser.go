@@ -170,15 +170,15 @@ func (p *Parser) resolve(ex ast.Expression) {
 	}
 }
 
-func (p *Parser) parseLetAssignment(ident *ast.Identifier, expr ast.Expression) ast.LetStatement {
-	return ast.LetStatement{
+func (p *Parser) parseLetAssignment(ident *ast.Identifier, expr ast.Expression) *ast.LetStatement {
+	return &ast.LetStatement{
 		Token: ident.Token,
 		Name:  ident,
 		Expr:  expr,
 	}
 }
-func (p *Parser) parseConstAssignment(ident *ast.Identifier, expr ast.Expression) ast.ConstStatement {
-	return ast.ConstStatement{
+func (p *Parser) parseConstAssignment(ident *ast.Identifier, expr ast.Expression) *ast.ConstStatement {
+	return &ast.ConstStatement{
 		Token: ident.Token,
 		Name:  ident,
 		Expr:  expr,
@@ -220,8 +220,8 @@ func (p *Parser) parseIdentifier() *ast.Identifier {
 		Value: name,
 	}
 }
-func (p *Parser) parseAssignment() ast.Reference {
-	// 	asgStmt := ast.AssignmentStatement{}
+func (p *Parser) parseAssignment() *ast.AssignmentStatement {
+	var asgnStatement *ast.AssignmentStatement = &ast.AssignmentStatement{}
 	var immutable bool
 	var ident *ast.Identifier
 	if p.tokenIs(token.LET) {
@@ -243,27 +243,27 @@ func (p *Parser) parseAssignment() ast.Reference {
 	}
 	p.nextToken() // SKIP assignment
 
+	asgnStatement.Name = ident
 	expr := p.parseExpression()
-
+	var assignment ast.Reference
 	if !immutable {
-		assignment := p.parseLetAssignment(ident, expr)
-		p.TopScope.Objects[ident.Value] = &assignment
-		return assignment
+		assignment = &ast.LetStatement{
+			Token: ident.Token,
+			Name:  ident,
+			Expr:  expr,
+		}
+	} else {
+		assignment = &ast.ConstStatement{
+			Token: ident.Token,
+			Name:  ident,
+			Expr:  expr,
+		}
 	}
-
-	assignment := p.parseConstAssignment(ident, expr)
-	p.TopScope.Objects[ident.Value] = &assignment
-	return assignment
-
+	p.TopScope.Objects[ident.Value] = assignment
+	asgnStatement.Expr = expr
+	return asgnStatement
 }
 
-/*
-func declare(decl, scope *ast.Scope, declType, identifiers ...*ast.Identifier) {
-	for _, ident := range identifiers {
-		obj = ast.New
-	}
-}
-*/
 func (p *Parser) parseBlockStatement() ast.BlockStatement {
 	block := ast.BlockStatement{
 		Lbrace: p.curToken,
