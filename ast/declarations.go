@@ -11,9 +11,9 @@ type Function struct {
 	Body *BlockStatement
 }
 
-func (ls Function) stmtNode() {}
+func (fs Function) stmtNode() {}
 
-func (ls Function) Value() Expression {
+func (fs Function) Value() Expression {
 	return nil
 }
 
@@ -23,7 +23,6 @@ type LetStatement struct {
 	Expr  Expression
 }
 type AssignmentStatement struct {
-	// LeftSide  []Expression
 	Token token.Token
 	Name  *Identifier
 	Expr  Expression

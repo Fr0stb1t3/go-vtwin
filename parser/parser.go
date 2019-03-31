@@ -45,7 +45,6 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 func (p *Parser) parseOperand() ast.Expression {
-	// fmt.Printf("%v\n", p.curToken)
 	switch p.curToken.Type {
 	case token.IDENT:
 		x := p.parseIdentifier()
@@ -72,6 +71,17 @@ func (p *Parser) parseUnaryExpr() ast.Expression {
 	case token.ADD, token.SUBT, token.NOT, token.XOR, token.AND:
 		operator = p.curToken
 		p.nextToken()
+	case token.IDENT:
+		if p.peekToken.Type == token.LPAREN {
+			x := p.parseIdentifier()
+			p.nextToken()
+			p.resolve(x)
+			fmt.Printf("function call: %v \n", x)
+			return &ast.UnaryExpression{
+				Operator: operator,
+				Operand:  x.Expr,
+			}
+		}
 	}
 	expr := p.parseOperand()
 	return &ast.UnaryExpression{
@@ -129,8 +139,6 @@ func (p *Parser) parseBinaryExpression(precInput int) (expression ast.Expression
 
 func (p *Parser) parseExpression() ast.Expression {
 	switch {
-	// case p.tokenIs(token.LPAREN):
-	// 	return p.parseParenExpr()
 	case p.tokenIs(token.LPAREN), p.peekToken.Type.IsOpertor():
 		return p.parseBinaryExpression(token.LowestPrec + 1)
 	default:
@@ -152,6 +160,7 @@ func (p *Parser) checkScope(ident string) {
 		}
 	}
 }
+
 func (p *Parser) resolve(ex ast.Expression) {
 	ident, _ := ex.(*ast.Identifier)
 	if ident == nil {
@@ -163,29 +172,13 @@ func (p *Parser) resolve(ex ast.Expression) {
 	}
 	for s := p.TopScope; s != nil; s = s.Outer {
 		if obj := s.Lookup(ident.Value); obj != nil {
-
 			ident.Expr = obj.Value()
 			return
 		}
 	}
 }
 
-func (p *Parser) parseLetAssignment(ident *ast.Identifier, expr ast.Expression) *ast.LetStatement {
-	return &ast.LetStatement{
-		Token: ident.Token,
-		Name:  ident,
-		Expr:  expr,
-	}
-}
-func (p *Parser) parseConstAssignment(ident *ast.Identifier, expr ast.Expression) *ast.ConstStatement {
-	return &ast.ConstStatement{
-		Token: ident.Token,
-		Name:  ident,
-		Expr:  expr,
-	}
-}
-
-func (p *Parser) parseFunction() ast.Function {
+func (p *Parser) parseFunction() *ast.Function {
 	p.nextToken()
 	ident := p.parseIdentifier()
 	p.nextToken()
@@ -198,11 +191,11 @@ func (p *Parser) parseFunction() ast.Function {
 	body := p.parseBlockStatement()
 	p.closeScope()
 
-	fun := ast.Function{
+	fun := &ast.Function{
 		Name: ident,
 		Body: &body,
 	}
-	p.TopScope.Objects[ident.Value] = &fun
+	p.TopScope.Objects[ident.Value] = fun
 	// Delcare func in
 	return fun
 }

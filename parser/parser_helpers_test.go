@@ -94,7 +94,9 @@ func evaluateUnaryExpr(ex ast.Expression, scope *ast.Scope) int {
 		ident := uax.Operand.(*ast.Identifier)
 
 		return evaluateExpression(ident.Expr, scope)
+
 	default:
+		fmt.Printf(" uax %v \n", uax)
 		panic("x- %v")
 	}
 	/*
@@ -199,11 +201,15 @@ func runStatement(stmt ast.Statement, scope *ast.Scope) result {
 	case ast.ReturnStatement:
 		rs := stmt.(ast.ReturnStatement)
 		val := evaluateExpression(rs.ReturnVal, scope)
+		fmt.Printf("val: %v \n", val)
 		return result{
 			number: val,
 		}
-	case ast.Function:
-		return result{}
+	case *ast.Function:
+		fs := stmt.(*ast.Function)
+		statements := fs.Body.Statements
+		fmt.Printf("ast.Function %v\n", statements)
+		return runStatements(statements, scope)
 	default:
 		fmt.Printf("%v \n", stmt)
 		panic("New statement")
