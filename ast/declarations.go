@@ -14,7 +14,10 @@ type Function struct {
 func (fs Function) stmtNode() {}
 
 func (fs Function) Value() Expression {
-	return nil
+	return FuncRef{
+		Value:      "FUN",
+		Statements: fs.Body,
+	}
 }
 
 type LetStatement struct {

@@ -155,7 +155,9 @@ func TestFuncBlock(t *testing.T) {
 	`
 	statements, scope := parseInput(input + ";")
 
-	runStatements(statements, scope)
+	runStatement(statements[0], scope)
+	res := runStatement(statements[1], scope)
+	assertEqual(t, res.number, 1, "let A <- returnSomething()")
 }
 
 /*

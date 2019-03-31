@@ -90,34 +90,20 @@ func evaluateUnaryExpr(ex ast.Expression, scope *ast.Scope) int {
 		}
 		val, _ := strconv.Atoi(uax.Operator.Literal + simple.Value)
 		return val
+	case ast.FuncRef:
+		ident := uax.Operand.(ast.FuncRef)
+		// fmt.Printf(" Statements %v \n", ident.Statements)
+		res := runStatements(ident.Statements.Statements, scope)
+		return res.number
 	case *ast.Identifier:
 		ident := uax.Operand.(*ast.Identifier)
 
 		return evaluateExpression(ident.Expr, scope)
-
 	default:
 		fmt.Printf(" uax %v \n", uax)
 		panic("x- %v")
 	}
-	/*
-		uLiteral := uax.Operand.(*ast.SimpleLiteral)
-		switch uLiteral.Type {
-		case token.INT:
-			val, _ := strconv.Atoi(uax.Operator.Literal + uLiteral.Value)
-			return val
-		case token.IDENT:
-			ref := scope.Lookup(uLiteral.Value)
-			if ref == nil {
-				panic("Identifier '" + uLiteral.Value + "' not found")
-			}
-			return evaluateExpression(ref.Value(), scope)
-		case token.TRUE:
-			return 1
-		case token.FALSE:
-			return 0
-		default:
-			panic("evaluateUnaryExpr: Unknown type" + uLiteral.Value)
-		}	*/
+
 }
 
 func evaluateBinaryExpr(ex ast.Expression, scope *ast.Scope) int {
@@ -149,8 +135,6 @@ func evaluateExpression(ex ast.Expression, scope *ast.Scope) int {
 	case *ast.ParenExpression:
 		pex := ex.(*ast.ParenExpression)
 		return evaluateExpression(pex.Expr, scope)
-	case ast.BinaryExpression:
-		return evaluateBinaryExpr(ex, scope)
 	case *ast.BinaryExpression:
 		return evaluateBinaryExpr(ex, scope)
 	case *ast.UnaryExpression:
@@ -201,14 +185,12 @@ func runStatement(stmt ast.Statement, scope *ast.Scope) result {
 	case ast.ReturnStatement:
 		rs := stmt.(ast.ReturnStatement)
 		val := evaluateExpression(rs.ReturnVal, scope)
-		fmt.Printf("val: %v \n", val)
 		return result{
 			number: val,
 		}
 	case *ast.Function:
 		fs := stmt.(*ast.Function)
 		statements := fs.Body.Statements
-		fmt.Printf("ast.Function %v\n", statements)
 		return runStatements(statements, scope)
 	default:
 		fmt.Printf("%v \n", stmt)

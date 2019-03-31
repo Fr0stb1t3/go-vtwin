@@ -15,6 +15,17 @@ type SimpleLiteral struct {
 	Type  token.Type
 	Value string
 }
+type FuncRef struct {
+	Type       token.Type
+	Value      string
+	Statements *BlockStatement
+}
+
+func (fr FuncRef) String() string {
+	return fr.Value
+}
+
+func (fr FuncRef) exprNode() {}
 
 type ParenExpression struct {
 	Lparen token.Token

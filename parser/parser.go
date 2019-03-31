@@ -76,7 +76,6 @@ func (p *Parser) parseUnaryExpr() ast.Expression {
 			x := p.parseIdentifier()
 			p.nextToken()
 			p.resolve(x)
-			fmt.Printf("function call: %v \n", x)
 			return &ast.UnaryExpression{
 				Operator: operator,
 				Operand:  x.Expr,
@@ -123,7 +122,7 @@ func (p *Parser) parseBinaryExpression(precInput int) (expression ast.Expression
 
 	p.nextToken()
 	for {
-		tok, oprec := p.Precedence()
+		tok, oprec := p.precedence()
 		if oprec < precInput {
 			return expression
 		}
@@ -337,7 +336,7 @@ func (p *Parser) ParseProgram() *ast.Program {
 	}
 	return program
 }
-func (p *Parser) Precedence() (token.Token, int) {
+func (p *Parser) precedence() (token.Token, int) {
 	return p.curToken, p.curToken.Type.Precedence()
 }
 func (p *Parser) peekPrecedence() int {
